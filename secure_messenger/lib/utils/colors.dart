@@ -26,6 +26,7 @@ MaterialColor primeMaterialColor = MaterialColor(primeColor.value, <int, Color>{
 final themeColors = ThemeData(
     colorScheme: ColorScheme.fromSwatch().copyWith(
   primary: primeColor,
+  background: primeColorDark
 ));
 const errorGradient = LinearGradient(
   begin: Alignment.topLeft,

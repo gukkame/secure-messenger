@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-
-  import '../utils/navigation.dart';
-  import '../utils/colors.dart';
+import '../utils/colors.dart';
+import '../utils/navigation.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int index;
   const BottomNavBar({super.key, required this.index});
-
   @override
   State<BottomNavBar> createState() => _BottomNavBarState();
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
+  //New
   late int _selectedIndex;
   void _onItemTapped(int index) {
     setState(() {
@@ -19,7 +18,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     });
     switch (_selectedIndex) {
       case 0:
-          navigate(context, "/contacts");
+        navigate(context, "/contacts");
         break;
       case 1:
         navigate(context, "/chat");
@@ -34,16 +33,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     _selectedIndex = widget.index;
     return BottomNavigationBar(
-      currentIndex: 0,
-      type: BottomNavigationBarType.fixed,
+      currentIndex: _selectedIndex, //New
+      type: BottomNavigationBarType.shifting,
       selectedFontSize: 20,
       selectedIconTheme: const IconThemeData(color: primeColor),
       selectedItemColor: primeColor,
-      unselectedItemColor: primeColor,
-      // unselectedFontSize: 10,
-      unselectedLabelStyle: const TextStyle(fontSize: 13, height: 0),
-      showUnselectedLabels: true,
-      enableFeedback: false,
+      unselectedItemColor: Colors.grey,
       selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../components/app_bar.dart';
+import '../components/bottom_nav_bar.dart';
+import '../screens/chat.dart';
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -8,8 +12,14 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  @override
+ @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: CustomAppBar(title: "Chat"),
+      body: Chat(),
+      bottomNavigationBar: BottomNavBar(
+        index: 1,
+      ),
+    );
   }
 }

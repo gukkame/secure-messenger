@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../components/app_bar.dart';
+import '../components/bottom_nav_bar.dart';
+import '../screens/profile.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -8,8 +12,14 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  @override
+ @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: CustomAppBar(title: "Profile"),
+      body: Profile(),
+      bottomNavigationBar: BottomNavBar(
+        index: 2,
+      ),
+    );
   }
 }
