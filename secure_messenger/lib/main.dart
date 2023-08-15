@@ -6,6 +6,7 @@ import 'pages/authentication/signup.dart';
 import 'pages/chat.dart';
 import 'pages/contacts.dart';
 import 'pages/profile.dart';
+import 'pages/user_profile.dart';
 import 'provider/user_provider.dart';
 
 void main() async {
@@ -25,13 +26,14 @@ class MainApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Map Markers',
         debugShowCheckedModeBanner: false,
-        initialRoute: '/login',
+        initialRoute: '/contacts',
         routes: {
           '/login': (context) => LogIn(),
           '/signup': (context) => SignUp(),
           '/contacts': (context) => ContactPage(),
           '/chat': (context) => ChatPage(),
           '/profile': (context) => ProfilePage(),
+          '/user-profile': (context) => UserProfilePage(),
         },
       ),
     );
