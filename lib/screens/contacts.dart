@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../components/container.dart';
 import '../utils/colors.dart';
-import '../utils/navigation.dart';
 
 class Contacts extends StatefulWidget {
   const Contacts({super.key});
@@ -15,9 +14,9 @@ class _ContactsState extends State<Contacts> {
   final TextEditingController _searchController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? user;
-  Widget _infoTextWidget = const SizedBox.shrink();
-  bool _searchLock = false;
-  String _searchedEmail = "";
+  final Widget _infoTextWidget = const SizedBox.shrink();
+  final bool _searchLock = false;
+  final String _searchedEmail = "";
 
   @override
   Widget build(BuildContext context) {
@@ -40,17 +39,17 @@ class _ContactsState extends State<Contacts> {
           ),
           const SizedBox(height: 40),
           _infoTextWidget,
-          Text("searched user"),
+          const Text("searched user"),
           // _userWidget,
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
-          Text(
+          const Text(
             "Contact list ",
             style: TextStyle(
                 fontSize: 26, fontWeight: FontWeight.w500, color: primeColor),
           ),
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
           _contactList,
@@ -112,7 +111,7 @@ class _ContactsState extends State<Contacts> {
   }
 
   Widget get _contactList {
-    return Column(
+    return const Column(
       children: [Text("friend 1 "), Text("friend 2")],
     );
   }

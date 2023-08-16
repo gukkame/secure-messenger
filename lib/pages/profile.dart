@@ -16,8 +16,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Profile"),
-      body: Profile(),
-      bottomNavigationBar: BottomNavBar(
+      body: const Profile(),
+      bottomNavigationBar: const BottomNavBar(
         index: 2,
       ),
     );

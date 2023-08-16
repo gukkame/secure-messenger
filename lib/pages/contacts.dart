@@ -16,8 +16,8 @@ class _ContactPageState extends State<ContactPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Contacts"),
-      body: Contacts(),
-      bottomNavigationBar: BottomNavBar(
+      body: const Contacts(),
+      bottomNavigationBar: const BottomNavBar(
         index: 0,
       ),
     );
