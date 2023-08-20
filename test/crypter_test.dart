@@ -18,7 +18,7 @@ void main() {
     expect(base64.hasMatch(encrypted), true);
   });
 
-  test("it decrypts the encrypted text", () {
+  test("it decrypts encrypted text", () {
     const text = "My secret message";
     final encrypted = sut.encrypt(text);
     final decrypted = sut.decrypt(encrypted);
