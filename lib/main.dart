@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:secure_messenger/pages/search.dart';
 import 'package:secure_messenger/utils/colors.dart';
-import 'package:secure_messenger/utils/crypter/crypter.dart';
 
 import 'firebase_options.dart';
 import 'pages/authentication/login.dart';
