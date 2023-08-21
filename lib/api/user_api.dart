@@ -15,7 +15,7 @@ class UserApi extends Api {
       );
       await write(
         collection: "wallet",
-        path: Convert.encode(email),
+        path: Convert.encrypt(email),
         data: {"total": 1000000, "holding": []},
       );
 
