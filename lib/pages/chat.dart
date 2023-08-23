@@ -12,12 +12,12 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
- @override
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       appBar: CustomAppBar(title: "Chat"),
-      body: const Chat(),
-      bottomNavigationBar: const BottomNavBar(
+      body: Chat(),
+      bottomNavigationBar: BottomNavBar(
         index: 1,
       ),
     );

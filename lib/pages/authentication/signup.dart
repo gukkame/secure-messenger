@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
 import '../../utils/colors.dart';
+import '../../utils/convert.dart';
 import '../../utils/user.dart';
 import '../../utils/navigation.dart';
 
@@ -17,16 +22,21 @@ class SignUp extends StatefulWidget {
 }
 
 class _AddNoteState extends State<SignUp> {
+  final ImagePicker picker = ImagePicker();
+  File? image;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _password2Controller = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? _passErrMsg;
   String? _emailErrMsg;
+  String? _phoneErrMsg;
   String? _loadingText;
   BorderColor usernameCheck = BorderColor.neutral;
   BorderColor emailCheck = BorderColor.neutral;
+  BorderColor phoneCheck = BorderColor.neutral;
   BorderColor passCheck = BorderColor.neutral;
   BorderColor pass2Check = BorderColor.neutral;
   bool _submitLock = false;
@@ -37,9 +47,12 @@ class _AddNoteState extends State<SignUp> {
     TextEditingController controller,
     String? Function(String?) validator, {
     String? errorText,
+    TextInputType inputType = TextInputType.text,
     bool obscureText = false,
   }) {
-    return RoundedGradientContainer(
+    return SizedBox(
+      width: 0,
+      child:RoundedGradientContainer(
       gradient: checker == BorderColor.error
           ? errorGradient
           : checker == BorderColor.correct
@@ -54,6 +67,7 @@ class _AddNoteState extends State<SignUp> {
             enableSuggestions: false,
             autocorrect: false,
             controller: controller,
+            keyboardType: inputType,
             decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10.0),
                 hintText: hintText,
@@ -61,9 +75,34 @@ class _AddNoteState extends State<SignUp> {
                 border: checker != BorderColor.error ? InputBorder.none : null),
             validator: validator,
           )),
-    );
+    ));
   }
 
+  Widget get _imageField => GestureDetector(
+      onTap: _pickImage,
+      child: SizedBox(
+        height: 150,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(200.0),
+          child: AspectRatio(
+            aspectRatio: 500 / 500,
+            child: image != null
+                ? Image.file(
+                    image as File,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    decoration: const BoxDecoration(gradient: primeGradient),
+                    child: const Center(
+                        child: Icon(
+                      Icons.add,
+                      size: 50,
+                      color: Colors.white,
+                    )),
+                  ),
+          ),
+        ),
+      ));
   Widget get _usernameField => _createInputField(
         "Username",
         usernameCheck,
@@ -75,7 +114,16 @@ class _AddNoteState extends State<SignUp> {
         emailCheck,
         _emailController,
         _validateEmailField,
+        inputType: TextInputType.emailAddress,
         errorText: _emailErrMsg,
+      );
+  Widget get _phoneField => _createInputField(
+        "Phone Number",
+        phoneCheck,
+        _phoneController,
+        _validatePhoneField,
+        inputType: TextInputType.phone,
+        errorText: _phoneErrMsg,
       );
   Widget get _passwordField => _createInputField(
         "Password",
@@ -92,6 +140,175 @@ class _AddNoteState extends State<SignUp> {
         _validatePassword2Field,
         obscureText: true,
       );
+
+  void _pickImage() async {
+    var newImage = await picker.pickImage(source: ImageSource.gallery);
+    if (newImage != null) {
+      debugPrint("New Image Picked: ${newImage.path}");
+      setState(() => image = File(newImage.path));
+    }
+  }
+
+  String? _validateUsernameField(String? value) {
+    if (value == null || value.isEmpty || value.length < 4) {
+      usernameCheck = BorderColor.error;
+      return "Username required";
+    }
+    usernameCheck = BorderColor.correct;
+    return null;
+  }
+
+  String? _validateEmailField(String? value) {
+    if (value == null || value.isEmpty) {
+      emailCheck = BorderColor.error;
+      return "Email required";
+    } else if (!value.contains("@") ||
+        !value.contains(".") ||
+        value.length < 4) {
+      emailCheck = BorderColor.error;
+      return "Email is wrong";
+    }
+    emailCheck = BorderColor.correct;
+    return null;
+  }
+
+  String? _validatePhoneField(String? value) {
+    if (value == null || value.isEmpty) {
+      phoneCheck = BorderColor.error;
+      return "Phone number required";
+    }
+
+    var regexUSA = RegExp(r'^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$');
+    var regexUni = RegExp(r'^(\+|00)[1-9][0-9 \-\(\)\.\/]{7,20}$');
+    value = value.trim();
+    value = value.replaceAll(RegExp(r' +'), " ");
+
+    if (!regexUSA.hasMatch(value) && !regexUni.hasMatch(value)) {
+      phoneCheck = BorderColor.error;
+      return "Enter a valid International or USA phone number (+xxx xxxx xxxx or xxx-xxx-xxxx)";
+    }
+    phoneCheck = BorderColor.correct;
+    return null;
+  }
+
+  String? _validatePasswordField(String? value) {
+    if (value == null ||
+        value.isEmpty ||
+        value != _password2Controller.value.text) {
+      passCheck = BorderColor.error;
+      return "Password required";
+    }
+    passCheck = BorderColor.correct;
+    return null;
+  }
+
+  String? _validatePassword2Field(String? value) {
+    if (value == null ||
+        value.isEmpty ||
+        value != _passwordController.value.text) {
+      pass2Check = BorderColor.error;
+      return "Password incorrect or doesn't match";
+    }
+    pass2Check = BorderColor.correct;
+    return null;
+  }
+
+  void _onSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      _removeAllNegativeCheckers();
+      setState(() {
+        _loadingText = "Processing data...";
+        _submitLock = true;
+      });
+      var name = _usernameController.value.text;
+      var email = _emailController.value.text;
+      var password = _passwordController.value.text;
+      var phone = _phoneController.value.text;
+
+      String? resp = await widget.user.registerUser(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+      if (resp == null) {
+        try {
+          await FirebaseStorage.instance
+              .ref()
+              .child("images/${Convert.encode(email)}")
+              .putFile(File(image!.path));
+        } on FirebaseException catch (e) {
+          setState(() {
+            _loadingText = null;
+            _submitLock = false;
+          });
+          debugPrint(e.code);
+          _handleRejection("image-error");
+        }
+        _saveUser();
+      } else {
+        setState(() {
+          _loadingText = null;
+          _submitLock = false;
+        });
+        _handleRejection(resp);
+      }
+    } else {
+      debugPrint("Invalid");
+      setState(() {
+        _loadingText = null;
+        _submitLock = false;
+      });
+    }
+  }
+
+  void _handleRejection(String msg) {
+    switch (msg) {
+      case 'weak-password':
+        passCheck = BorderColor.error;
+        pass2Check = BorderColor.error;
+        _passErrMsg = 'Password is too weak.';
+        break;
+      case 'email-already-in-use':
+        emailCheck = BorderColor.error;
+        _emailErrMsg = 'Account already exists with this email.';
+      case 'invalid-email':
+        emailCheck = BorderColor.error;
+        _emailErrMsg = 'Invalid email address';
+        break;
+      case 'image-error':
+        _loadingText =
+            'Error uploading your profile picture, please pick another picture.';
+      default:
+        _loadingText =
+            "Internal server error. Please contact support or try again.";
+        usernameCheck = BorderColor.error;
+        emailCheck = BorderColor.error;
+        phoneCheck = BorderColor.error;
+        passCheck = BorderColor.error;
+        pass2Check = BorderColor.error;
+    }
+    setState(() => {});
+  }
+
+  void _saveUser() {
+    debugPrint("User registered successfully! redirecting...");
+    ProviderManager().setUser(context, widget.user);
+    navigate(context, "/contacts");
+  }
+
+  void _removeAllNegativeCheckers() {
+    _passErrMsg = null;
+    _emailErrMsg = null;
+    _phoneErrMsg = null;
+    _loadingText = null;
+    usernameCheck = BorderColor.neutral;
+    emailCheck = BorderColor.neutral;
+    phoneCheck = BorderColor.neutral;
+    passCheck = BorderColor.neutral;
+    pass2Check = BorderColor.neutral;
+  }
+
   Widget get _loading {
     return _loadingText == null
         ? const SizedBox.shrink()
@@ -134,125 +351,6 @@ class _AddNoteState extends State<SignUp> {
         ));
   }
 
-  String? _validateUsernameField(String? value) {
-    if (value == null || value.isEmpty || value.length < 4) {
-      usernameCheck = BorderColor.error;
-      return "Username required";
-    }
-    usernameCheck = BorderColor.correct;
-    return null;
-  }
-
-  String? _validateEmailField(String? value) {
-    if (value == null || value.isEmpty) {
-      emailCheck = BorderColor.error;
-      return "Email required";
-    } else if (!value.contains("@") ||
-        !value.contains(".") ||
-        value.length < 4) {
-      emailCheck = BorderColor.error;
-      return "Email is wrong";
-    }
-    emailCheck = BorderColor.correct;
-    return null;
-  }
-
-  String? _validatePasswordField(String? value) {
-    if (value == null ||
-        value.isEmpty ||
-        value != _password2Controller.value.text) {
-      passCheck = BorderColor.error;
-      return "Password required";
-    }
-    passCheck = BorderColor.correct;
-    return null;
-  }
-
-  String? _validatePassword2Field(String? value) {
-    if (value == null ||
-        value.isEmpty ||
-        value != _passwordController.value.text) {
-      pass2Check = BorderColor.error;
-      return "Password incorrect or doesn't match";
-    }
-    pass2Check = BorderColor.correct;
-    return null;
-  }
-
-  void _onSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      _removeAllNegativeCheckers();
-      setState(() {
-        _loadingText = "Processing data...";
-        _submitLock = true;
-      });
-      var name = _usernameController.value.text;
-      var email = _emailController.value.text;
-      var password = _passwordController.value.text;
-      String? resp = await widget.user.registerUser(
-        name: name,
-        email: email,
-        password: password,
-      );
-      if (resp == null) {
-        _saveUser();
-      } else {
-        setState(() {
-          _loadingText = null;
-          _submitLock = false;
-        });
-        _handleDBRejection(resp);
-        setState(() => {});
-      }
-    } else {
-      debugPrint("Invalid");
-      setState(() {
-        _loadingText = null;
-        _submitLock = false;
-      });
-    }
-  }
-
-  void _handleDBRejection(String msg) {
-    switch (msg) {
-      case 'weak-password':
-        passCheck = BorderColor.error;
-        pass2Check = BorderColor.error;
-        _passErrMsg = 'Password is too weak.';
-        break;
-      case 'email-already-in-use':
-        emailCheck = BorderColor.error;
-        _emailErrMsg = 'Account already exists with this email.';
-      case 'invalid-email':
-        emailCheck = BorderColor.error;
-        _emailErrMsg = 'Invalid email address';
-        break;
-      default:
-        _loadingText =
-            "Internal server error. Please contact support or try again.";
-        usernameCheck = BorderColor.error;
-        emailCheck = BorderColor.error;
-        passCheck = BorderColor.error;
-        pass2Check = BorderColor.error;
-    }
-  }
-
-  void _saveUser() {
-    debugPrint("User registered successfully! redirecting...");
-    ProviderManager().setUser(context, widget.user);
-    navigate(context, "/stock");
-  }
-
-  void _removeAllNegativeCheckers() {
-    _passErrMsg = null;
-    _emailErrMsg = null;
-    _loadingText = null;
-    usernameCheck = BorderColor.neutral;
-    emailCheck = BorderColor.neutral;
-    passCheck = BorderColor.neutral;
-    pass2Check = BorderColor.neutral;
-  }
-
   @override
   Widget build(BuildContext context) {
     return RoundScaffold(
@@ -262,10 +360,12 @@ class _AddNoteState extends State<SignUp> {
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: ListView(
+
+            // mainAxisAlignment: MainAxisAlignment.center,
+            // crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(height: 28),
               const Text(
                 "Sign Up",
                 style: TextStyle(
@@ -273,12 +373,14 @@ class _AddNoteState extends State<SignUp> {
                     color: primeColor,
                     fontWeight: FontWeight.w500),
               ),
-              const SizedBox(
-                height: 28,
-              ),
+              const SizedBox(height: 28),
+              _imageField,
+              const SizedBox(height: 20),
               _usernameField,
               const SizedBox(height: 20),
               _emailField,
+              const SizedBox(height: 20),
+              _phoneField,
               const SizedBox(height: 20),
               _passwordField,
               const SizedBox(height: 20),

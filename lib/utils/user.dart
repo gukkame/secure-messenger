@@ -5,8 +5,6 @@ class User {
   late UserCredential credential;
   late String email;
   late String name;
-  double? lat;
-  double? lng;
 
   Future<String?> signInUser(
       {required String email, required String password}) async {
@@ -30,6 +28,7 @@ class User {
   Future<String?> registerUser(
       {required String name,
       required String email,
+      required String phone,
       required String password}) async {
     try {
       credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
