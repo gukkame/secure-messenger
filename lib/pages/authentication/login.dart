@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
@@ -14,6 +15,7 @@ class LogIn extends StatefulWidget {
 }
 
 class _LogInState extends State<LogIn> {
+  final LocalAuthentication auth = LocalAuthentication();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
@@ -23,6 +25,7 @@ class _LogInState extends State<LogIn> {
   String? _passErr;
   String? _loadingText;
   bool _submitLock = false;
+  bool _enableBio = false;
 
   @override
   void initState() {
@@ -38,6 +41,17 @@ class _LogInState extends State<LogIn> {
     //     _redirect();
     //   },
     // );
+    auth.canCheckBiometrics.then((value) {
+      if (value) {
+        auth.isDeviceSupported().then((value2) {
+          if (value2) {
+            setState(() {
+              _enableBio = true;
+            });
+          }
+        });
+      }
+    });
     super.initState();
   }
 
@@ -227,6 +241,13 @@ class _LogInState extends State<LogIn> {
     navigate(context, "/contacts");
   }
 
+  List<Widget> get _fingerPrint {
+    return [
+      const Spacer(),
+      const SizedBox(height: 10),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return RoundScaffold(
@@ -253,6 +274,7 @@ class _LogInState extends State<LogIn> {
               _redirectButton,
               const SizedBox(height: 30),
               _submitButton,
+              ..._fingerPrint,
             ],
           ),
         ),
