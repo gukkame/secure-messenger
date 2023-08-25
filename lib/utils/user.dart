@@ -40,7 +40,7 @@ class User {
       this.name = name;
 
       var resp = await UserApi()
-          .registerNewUser(email: email, name: name, password: password);
+          .registerNewUser(email: email, name: name, phone: phone);
       if (!resp) return "Internal server error. Please contact support.";
     } on FirebaseAuthException catch (e) {
       return e.code;

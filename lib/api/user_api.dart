@@ -1,22 +1,31 @@
 import 'package:flutter/cupertino.dart';
-import '../utils/convert.dart';
 import 'api.dart';
 
 class UserApi extends Api {
   Future<bool> registerNewUser(
       {required String email,
       required String name,
-      required String password}) async {
+      required String phone}) async {
     try {
       await write(
         collection: "users",
         path: email,
-        data: {"email": email, "name": name},
+        data: {
+          "email": email,
+          "name": name,
+          "phone": phone,
+          "key": "",
+        },
       );
       await write(
-        collection: "wallet",
-        path: Convert.encode(email),
-        data: {"total": 1000000, "holding": []},
+        collection: "friends",
+        path: email,
+        data: {"friends": {}, "outbound": {}, "inbound": {}},
+      );
+      await write(
+        collection: "chats",
+        path: email,
+        data: {},
       );
 
       return true;

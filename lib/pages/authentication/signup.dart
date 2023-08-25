@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:secure_messenger/utils/media_type.dart';
+import '../../api/media_api.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
 import '../../utils/colors.dart';
-import '../../utils/convert.dart';
 import '../../utils/user.dart';
 import '../../utils/navigation.dart';
 
@@ -18,10 +18,10 @@ class SignUp extends StatefulWidget {
   SignUp({super.key, double scaffoldBorderRadius = 20.0})
       : _scaffoldBorderRadius = scaffoldBorderRadius;
   @override
-  State<SignUp> createState() => _AddNoteState();
+  State<SignUp> createState() => _SignUpState();
 }
 
-class _AddNoteState extends State<SignUp> {
+class _SignUpState extends State<SignUp> {
   final ImagePicker picker = ImagePicker();
   File? image;
   final TextEditingController _usernameController = TextEditingController();
@@ -51,31 +51,33 @@ class _AddNoteState extends State<SignUp> {
     bool obscureText = false,
   }) {
     return SizedBox(
-      width: 0,
-      child:RoundedGradientContainer(
-      gradient: checker == BorderColor.error
-          ? errorGradient
-          : checker == BorderColor.correct
-              ? correctGradient
-              : null,
-      child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: checker == BorderColor.error ? 5 : 0,
-          ),
-          child: TextFormField(
-            obscureText: obscureText,
-            enableSuggestions: false,
-            autocorrect: false,
-            controller: controller,
-            keyboardType: inputType,
-            decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10.0),
-                hintText: hintText,
-                errorText: errorText,
-                border: checker != BorderColor.error ? InputBorder.none : null),
-            validator: validator,
-          )),
-    ));
+        width: 0,
+        child: RoundedGradientContainer(
+          gradient: checker == BorderColor.error
+              ? errorGradient
+              : checker == BorderColor.correct
+                  ? correctGradient
+                  : null,
+          child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: checker == BorderColor.error ? 5 : 0,
+              ),
+              child: TextFormField(
+                obscureText: obscureText,
+                enableSuggestions: false,
+                autocorrect: false,
+                controller: controller,
+                keyboardType: inputType,
+                decoration: InputDecoration(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 10.0),
+                    hintText: hintText,
+                    errorText: errorText,
+                    border:
+                        checker != BorderColor.error ? InputBorder.none : null),
+                validator: validator,
+              )),
+        ));
   }
 
   Widget get _imageField => GestureDetector(
@@ -217,9 +219,10 @@ class _AddNoteState extends State<SignUp> {
     if (_formKey.currentState!.validate()) {
       _removeAllNegativeCheckers();
       setState(() {
-        _loadingText = "Processing data...";
+        _loadingText = "Validating data...";
         _submitLock = true;
       });
+
       var name = _usernameController.value.text;
       var email = _emailController.value.text;
       var password = _passwordController.value.text;
@@ -231,21 +234,27 @@ class _AddNoteState extends State<SignUp> {
         phone: phone,
         password: password,
       );
+
       if (resp == null) {
-        try {
-          await FirebaseStorage.instance
-              .ref()
-              .child("images/${Convert.encode(email)}")
-              .putFile(File(image!.path));
-        } on FirebaseException catch (e) {
-          setState(() {
-            _loadingText = null;
-            _submitLock = false;
-          });
-          debugPrint(e.code);
-          _handleRejection("image-error");
-        }
-        _saveUser();
+        MediaApi().uploadFile(
+          email,
+          type: MediaType.image,
+          file: image as File,
+          onUpdate: (String msg, [int? _]) =>
+              setState(() => _loadingText = msg),
+          onComplete: (String msg) {
+            setState(() => _loadingText = msg);
+            _saveUser();
+          },
+          onError: (String msg) {
+            setState(() {
+              _loadingText = null;
+              _submitLock = false;
+            });
+            debugPrint(msg);
+            _handleRejection("image-error");
+          },
+        );
       } else {
         setState(() {
           _loadingText = null;
@@ -361,9 +370,6 @@ class _AddNoteState extends State<SignUp> {
         child: Form(
           key: _formKey,
           child: ListView(
-
-            // mainAxisAlignment: MainAxisAlignment.center,
-            // crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 28),
               const Text(
