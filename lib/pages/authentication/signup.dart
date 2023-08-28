@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../components/border_color.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
@@ -296,5 +297,3 @@ class _AddNoteState extends State<SignUp> {
     );
   }
 }
-
-enum BorderColor { neutral, error, correct }

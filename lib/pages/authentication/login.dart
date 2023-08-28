@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../components/border_color.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
@@ -15,6 +18,7 @@ class LogIn extends StatefulWidget {
 }
 
 class _LogInState extends State<LogIn> {
+  late SharedPreferences pref;
   final LocalAuthentication auth = LocalAuthentication();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -41,17 +45,17 @@ class _LogInState extends State<LogIn> {
     //     _redirect();
     //   },
     // );
-    auth.canCheckBiometrics.then((value) {
-      if (value) {
-        auth.isDeviceSupported().then((value2) {
-          if (value2) {
-            setState(() {
-              _enableBio = true;
-            });
-          }
-        });
+    auth.getAvailableBiometrics().then((biometrics) {
+      if (biometrics.contains(BiometricType.fingerprint)) {
+        setState(() => _enableBio = true);
       }
+    }).catchError((Object obj) async {
+      await Future.delayed(const Duration(seconds: 0));
+      debugPrint(obj.toString());
+      return null;
     });
+    SharedPreferences.getInstance()
+        .then((value) => setState((() => pref = value)));
     super.initState();
   }
 
@@ -182,21 +186,7 @@ class _LogInState extends State<LogIn> {
         _loadingText = "Processing data...";
         _submitLock = true;
       });
-      String? resp = await widget.user.signInUser(
-        email: _emailController.value.text,
-        password: _passController.value.text,
-      );
-      if (resp != null) {
-        setState(() {
-          _loadingText = null;
-          _submitLock = false;
-        });
-        _handleDBRejection(resp);
-        setState(() {});
-      } else {
-        // _setUser();
-        _redirect();
-      }
+      await _logInUser();
     } else {
       debugPrint("Invalid");
       setState(() {
@@ -206,12 +196,21 @@ class _LogInState extends State<LogIn> {
     }
   }
 
-  void _removeAllNegativeCheckers() {
-    emailCheck = BorderColor.neutral;
-    passCheck = BorderColor.neutral;
-    _emailErr = null;
-    _passErr = null;
-    _loadingText = null;
+  Future<void> _logInUser({String? email, String? password}) async {
+    String? resp = await widget.user.signInUser(
+      email: email ?? _emailController.value.text,
+      password: password ?? _passController.value.text,
+    );
+    if (resp != null) {
+      setState(() {
+        _loadingText = null;
+        _submitLock = false;
+      });
+      _handleDBRejection(resp);
+    } else {
+      _setUser();
+      _redirect();
+    }
   }
 
   void _handleDBRejection(String msg) {
@@ -230,10 +229,28 @@ class _LogInState extends State<LogIn> {
         emailCheck = BorderColor.error;
         passCheck = BorderColor.error;
     }
+    setState(() {});
+  }
+
+  void _removeAllNegativeCheckers() {
+    emailCheck = BorderColor.neutral;
+    passCheck = BorderColor.neutral;
+    _emailErr = null;
+    _passErr = null;
+    _loadingText = null;
   }
 
   void _setUser() {
     ProviderManager().setUser(context, widget.user);
+
+    String email = _emailController.value.text;
+    String password = _passController.value.text;
+    if (password.isNotEmpty) {
+      SharedPreferences.getInstance().then((SharedPreferences pref) {
+        pref.setString("email", email);
+        pref.setString("password", password);
+      });
+    }
   }
 
   void _redirect() {
@@ -242,10 +259,69 @@ class _LogInState extends State<LogIn> {
   }
 
   List<Widget> get _fingerPrint {
+    if (!_enableBio) return [];
     return [
       const Spacer(),
+      IconButton(
+        onPressed: _checkFingerprint,
+        icon: const Icon(
+          Icons.fingerprint,
+          color: primeColor,
+        ),
+      ),
       const SizedBox(height: 10),
     ];
+  }
+
+  void _checkFingerprint() async {
+    bool authenticated = false;
+    try {
+      setState(() {
+        _submitLock = true;
+        _loadingText = 'Authenticating...';
+      });
+      authenticated = await auth.authenticate(
+        localizedReason: 'Scan your fingerprint to authenticate',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+      setState(() {
+        _submitLock = false;
+      });
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+      setState(() {
+        _submitLock = false;
+        _loadingText = 'Error: ${e.message}';
+      });
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!authenticated) {
+      setState(() {
+        _loadingText = "Couldn't authenticate via fingerprint";
+      });
+      return;
+    }
+
+    try {
+      _logInUser(
+        email: pref.getString("email"),
+        password: pref.getString("password"),
+      );
+    } catch (e) {
+      setState(() {
+        _submitLock = false;
+        _loadingText =
+            "No user assigned to this fingerprint, please log in via email";
+      });
+    }
   }
 
   @override
@@ -282,5 +358,3 @@ class _LogInState extends State<LogIn> {
     );
   }
 }
-
-enum BorderColor { neutral, error, correct }
