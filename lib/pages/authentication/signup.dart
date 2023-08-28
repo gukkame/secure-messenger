@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:secure_messenger/utils/media_type.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/media_api.dart';
 import '../../components/border_color.dart';
 import '../../provider/provider_manager.dart';
@@ -23,6 +24,7 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
+  late SharedPreferences pref;
   final ImagePicker picker = ImagePicker();
   File? image;
   final TextEditingController _usernameController = TextEditingController();
@@ -41,6 +43,20 @@ class _SignUpState extends State<SignUp> {
   BorderColor passCheck = BorderColor.neutral;
   BorderColor pass2Check = BorderColor.neutral;
   bool _submitLock = false;
+
+  @override
+  void initState() {
+    _getSharedPreferenceInstance();
+    super.initState();
+  }
+
+  void _getSharedPreferenceInstance() async {
+    try {
+      pref = await SharedPreferences.getInstance();
+    } catch (e) {
+      debugPrint("Shared preference error: ${e.toString()}");
+    }
+  }
 
   Widget _createInputField(
     String hintText,
@@ -309,6 +325,8 @@ class _SignUpState extends State<SignUp> {
   void _saveUser() {
     debugPrint("User registered successfully! redirecting...");
     ProviderManager().setUser(context, widget.user);
+    pref.setString("email", _emailController.value.text);
+    pref.setString("password", _passwordController.value.text);
     navigate(context, "/contacts");
   }
 
