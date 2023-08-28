@@ -18,6 +18,7 @@ dependencies:
   pointycastle: ^3.7.3
   flutter:
     sdk: flutter
+  image_picker: ^1.0.2
 
 dev_dependencies:
   flutter_test:

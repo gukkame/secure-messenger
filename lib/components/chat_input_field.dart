@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/colors.dart';
-
 import 'container.dart';
+
+import 'package:image_picker/image_picker.dart';
 
 class ChatInputField extends StatefulWidget {
   const ChatInputField({super.key});
@@ -13,45 +16,69 @@ class ChatInputField extends StatefulWidget {
 
 class _ChatInputFieldState extends State<ChatInputField> {
   TextEditingController _textEditingController = TextEditingController();
+  final ImagePicker picker = ImagePicker();
+  File? image;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(28.0),
-      child: RoundedGradientContainer(
-        gradient: const LinearGradient(colors: [Colors.black, Colors.black]),
-        borderSize: 2,
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.photo), // Icon for adding images or videos
-              onPressed: () {
-                // Handle adding images or videos here
-              },
-            ),
-            Expanded(
-              child: TextField(
-                controller: _textEditingController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your message here...',
-                  border: InputBorder.none,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (image != null)
+          Positioned(
+            top: 100,
+            right: 16,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: FileImage(image!),
+                  fit: BoxFit.cover,
                 ),
-                textInputAction: TextInputAction.newline,
+                borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.mic),
-              onPressed: () {},
+          ),
+        Padding(
+          padding: const EdgeInsets.all(28.0),
+          child: RoundedGradientContainer(
+            gradient:
+                const LinearGradient(colors: [Colors.black, Colors.black]),
+            borderSize: 2,
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.photo),
+                  onPressed: () {
+                    _pickImage();
+                  },
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _textEditingController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter your message here...',
+                      border: InputBorder.none,
+                    ),
+                    textInputAction: TextInputAction.newline,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.mic),
+                  onPressed: () {},
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () {
+                    sendMessage();
+                  },
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: () {
-                sendMessage();
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -59,9 +86,24 @@ class _ChatInputFieldState extends State<ChatInputField> {
     debugPrint("Message");
     debugPrint(_textEditingController.text);
 
-    setState(() => _textEditingController.text = "");
+    setState(() {
+      _textEditingController.text = "";
+      image = null;
+    });
+
     if (_textEditingController.text != "") {
       //! Save message in database and send to other user
+    }
+    if (image != null) {
+      //! Save image in database
+    }
+  }
+
+  void _pickImage() async {
+    var newImage = await picker.pickImage(source: ImageSource.gallery);
+    if (newImage != null) {
+      debugPrint("New Image Picked: ${newImage.path}");
+      setState(() => image = File(newImage.path));
     }
   }
 }
