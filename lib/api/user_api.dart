@@ -12,7 +12,7 @@ class UserApi extends Api {
   Future<bool> registerNewUser(
       {required String email,
       required String name,
-      required String password}) async {
+      required String phone}) async {
     try {
       await write(
         collection: "users",
@@ -20,20 +20,9 @@ class UserApi extends Api {
         data: {
           "email": email,
           "name": name,
-          "online": true,
+          "phone": phone,
           "key": "",
         },
-      );
-      await write(
-        collection: "friends",
-        path: email,
-        data: {"friends": {}, "outbound": {}, "inbound": {}},
-        // data: {
-        //   "email": email,
-        //   "name": name,
-        //   "online": true,
-        //   "key": "",
-        // },
       );
       await write(
         collection: "friends",

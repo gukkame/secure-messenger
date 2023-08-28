@@ -14,10 +14,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       appBar: CustomAppBar(title: "Profile"),
-      body: const Profile(),
-      bottomNavigationBar: const BottomNavBar(
+      body: Profile(),
+      bottomNavigationBar: BottomNavBar(
         index: 2,
       ),
     );

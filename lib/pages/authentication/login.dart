@@ -180,7 +180,7 @@ class _LogInState extends State<LogIn> {
         _handleDBRejection(resp);
         setState(() {});
       } else {
-        // _setUser();
+        _setUser();
         _redirect();
       }
     } else {
@@ -219,6 +219,7 @@ class _LogInState extends State<LogIn> {
   }
 
   void _setUser() {
+    
     ProviderManager().setUser(context, widget.user);
   }
 
