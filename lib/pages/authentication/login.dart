@@ -339,6 +339,7 @@ class _LogInState extends State<LogIn> {
   /* On Successful Login */
 
   void _setUser() {
+    
     ProviderManager().setUser(context, widget.user);
 
     String email = _emailController.value.text;
