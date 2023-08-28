@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:secure_messenger/provider/provider_manager.dart';
+import 'package:secure_messenger/provider/provider_manager.dart';
 import '../utils/convert.dart';
+import '../utils/user.dart';
 import '../utils/user.dart';
 import 'api.dart';
 
 class UserApi extends Api {
+  /// Initialize a user in the database
   /// Initialize a user in the database
   Future<bool> registerNewUser(
       {required String email,
@@ -20,6 +23,17 @@ class UserApi extends Api {
           "online": true,
           "key": "",
         },
+      );
+      await write(
+        collection: "friends",
+        path: email,
+        data: {"friends": {}, "outbound": {}, "inbound": {}},
+        // data: {
+        //   "email": email,
+        //   "name": name,
+        //   "online": true,
+        //   "key": "",
+        // },
       );
       await write(
         collection: "friends",
