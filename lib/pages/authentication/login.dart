@@ -31,6 +31,7 @@ class _LogInState extends State<LogIn> {
   bool _submitLock = false;
   bool _enableBio = false;
 
+  /* Initialization */
   @override
   void initState() {
     // widget.user
@@ -45,19 +46,31 @@ class _LogInState extends State<LogIn> {
     //     _redirect();
     //   },
     // );
-    auth.getAvailableBiometrics().then((biometrics) {
-      if (biometrics.contains(BiometricType.fingerprint)) {
-        setState(() => _enableBio = true);
-      }
-    }).catchError((Object obj) async {
-      await Future.delayed(const Duration(seconds: 0));
-      debugPrint(obj.toString());
-      return null;
-    });
-    SharedPreferences.getInstance()
-        .then((value) => setState((() => pref = value)));
+    _enableFingerPrintLogin();
+    _getSharedPreferenceInstance();
     super.initState();
   }
+
+  void _enableFingerPrintLogin() async {
+    try {
+      _enableBio =
+          await auth.isDeviceSupported() || await auth.canCheckBiometrics;
+      debugPrint("Fingerprint log in available: $_enableBio");
+      setState(() {});
+    } catch (e) {
+      debugPrint("Fingerprint bio check error ${e.toString()}");
+    }
+  }
+
+  void _getSharedPreferenceInstance() async {
+    try {
+      pref = await SharedPreferences.getInstance();
+    } catch (e) {
+      debugPrint("Shared preference error: ${e.toString()}");
+    }
+  }
+
+  /* Email Login Widget */
 
   Widget _createInputField(
     String hintText,
@@ -196,6 +209,89 @@ class _LogInState extends State<LogIn> {
     }
   }
 
+  /* Fingerprint Log in */
+
+  List<Widget> get _fingerPrint {
+    if (!_enableBio) return [];
+    return [
+      IconButton(
+        iconSize: 50,
+        onPressed: _checkFingerprint,
+        icon: const Icon(
+          Icons.fingerprint,
+          color: primeColor,
+          size: 50,
+        ),
+      ),
+      const SizedBox(height: 10),
+    ];
+  }
+
+  void _checkFingerprint() async {
+    bool authenticated = false;
+    try {
+      setState(() {
+        _submitLock = true;
+        _loadingText = 'Authenticating...';
+      });
+      authenticated = await auth.authenticate(
+        localizedReason: 'Log in via fingerprint',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+      setState(() {
+        _submitLock = false;
+      });
+      debugPrint("authenticate: $authenticated");
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+      setState(() {
+        _submitLock = false;
+        _loadingText = 'Error: ${e.message}';
+      });
+      return;
+    } catch (e) {
+      setState(() {
+        _submitLock = false;
+        _loadingText = 'Error: ${e.toString()}';
+      });
+      return;
+    }
+
+    debugPrint("authenticate: $authenticated");
+
+    if (!mounted) {
+      debugPrint("no longer mounted");
+      return;
+    }
+
+    if (!authenticated) {
+      setState(() {
+        _loadingText = "Couldn't authenticate via fingerprint";
+      });
+      return;
+    }
+
+    var email = pref.getString("email");
+    var password = pref.getString("password");
+    if (email != null && password != null) {
+      _logInUser(
+        email: email,
+        password: password,
+      );
+    } else {
+      setState(() {
+        _submitLock = false;
+        _loadingText =
+            "No user assigned to this fingerprint, please log in via email";
+      });
+    }
+  }
+
+  /* Login Functionality */
+
   Future<void> _logInUser({String? email, String? password}) async {
     String? resp = await widget.user.signInUser(
       email: email ?? _emailController.value.text,
@@ -240,6 +336,8 @@ class _LogInState extends State<LogIn> {
     _loadingText = null;
   }
 
+  /* On Successful Login */
+
   void _setUser() {
     ProviderManager().setUser(context, widget.user);
 
@@ -258,72 +356,6 @@ class _LogInState extends State<LogIn> {
     navigate(context, "/contacts");
   }
 
-  List<Widget> get _fingerPrint {
-    if (!_enableBio) return [];
-    return [
-      const Spacer(),
-      IconButton(
-        onPressed: _checkFingerprint,
-        icon: const Icon(
-          Icons.fingerprint,
-          color: primeColor,
-        ),
-      ),
-      const SizedBox(height: 10),
-    ];
-  }
-
-  void _checkFingerprint() async {
-    bool authenticated = false;
-    try {
-      setState(() {
-        _submitLock = true;
-        _loadingText = 'Authenticating...';
-      });
-      authenticated = await auth.authenticate(
-        localizedReason: 'Scan your fingerprint to authenticate',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
-      );
-      setState(() {
-        _submitLock = false;
-      });
-    } on PlatformException catch (e) {
-      debugPrint(e.toString());
-      setState(() {
-        _submitLock = false;
-        _loadingText = 'Error: ${e.message}';
-      });
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    if (!authenticated) {
-      setState(() {
-        _loadingText = "Couldn't authenticate via fingerprint";
-      });
-      return;
-    }
-
-    try {
-      _logInUser(
-        email: pref.getString("email"),
-        password: pref.getString("password"),
-      );
-    } catch (e) {
-      setState(() {
-        _submitLock = false;
-        _loadingText =
-            "No user assigned to this fingerprint, please log in via email";
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return RoundScaffold(
@@ -331,29 +363,33 @@ class _LogInState extends State<LogIn> {
       rounding: 20,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _title,
-              const SizedBox(
-                height: 28,
-              ),
-              _emailField,
-              const SizedBox(height: 20),
-              _passField,
-              SizedBox(height: _loadingText != null ? 20 : 0),
-              _loading,
-              const SizedBox(height: 20),
-              _redirectButton,
-              const SizedBox(height: 30),
-              _submitButton,
-              ..._fingerPrint,
-            ],
+        child: Column(children: [
+          const Spacer(),
+          Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _title,
+                const SizedBox(
+                  height: 28,
+                ),
+                _emailField,
+                const SizedBox(height: 20),
+                _passField,
+                SizedBox(height: _loadingText != null ? 20 : 0),
+                _loading,
+                const SizedBox(height: 20),
+                _redirectButton,
+                const SizedBox(height: 30),
+                _submitButton,
+              ],
+            ),
           ),
-        ),
+          const Spacer(),
+          ..._fingerPrint,
+        ]),
       ),
     );
   }
