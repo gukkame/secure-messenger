@@ -14,10 +14,10 @@ class ContactPage extends StatefulWidget {
 class _ContactPageState extends State<ContactPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       appBar: CustomAppBar(title: "Contacts"),
-      body: const Contacts(),
-      bottomNavigationBar: const BottomNavBar(
+      body: Contacts(),
+      bottomNavigationBar: BottomNavBar(
         index: 0,
       ),
     );
