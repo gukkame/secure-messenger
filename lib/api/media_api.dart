@@ -15,7 +15,7 @@ class MediaApi {
       required void Function(String msg) onComplete,
       required void Function(String msg) onError}) {
     var task = _storage
-        .child("${type.str}s/${Convert.encode(email)}")
+        .child("${type.str}s/${Convert.encrypt(email)}")
         .putFile(File(file.path))
         .snapshotEvents;
     _handleUploadProgress(

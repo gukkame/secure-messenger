@@ -30,7 +30,7 @@ class MainApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => UserDataProvider(),
       child: MaterialApp(
-        title: 'Map Markers',
+        title: 'Secure Messenger',
         theme: themeColors,
         debugShowCheckedModeBanner: false,
         initialRoute: '/login',
