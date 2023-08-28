@@ -21,7 +21,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
         navigate(context, "/contacts");
         break;
       case 1:
-        navigate(context, "/chat");
+        navigate(context, "/chat-page");
         break;
       case 2:
         navigate(context, "/profile");
