@@ -85,7 +85,6 @@ class _SignUpState extends State<SignUp> {
       child: SizedBox(
         height: 150,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(200.0),
           child: AspectRatio(
             aspectRatio: 500 / 500,
             child: image != null
@@ -93,15 +92,14 @@ class _SignUpState extends State<SignUp> {
                     image as File,
                     fit: BoxFit.cover,
                   )
-                : Container(
-                    decoration: const BoxDecoration(gradient: primeGradient),
-                    child: const Center(
-                        child: Icon(
-                      Icons.add,
-                      size: 50,
-                      color: Colors.white,
+                : const RoundedGradientContainer(
+                    borderSize: 2,
+                    child: Center(
+                      child: Text(
+                        "Add profile picture",
+                        style: TextStyle(fontSize: 22, color: Colors.black54),
+                      ),
                     )),
-                  ),
           ),
         ),
       ));
@@ -148,7 +146,7 @@ class _SignUpState extends State<SignUp> {
     if (newImage != null) {
       debugPrint("New Image Picked: ${newImage.path}");
       setState(() => image = File(newImage.path));
-    }
+    } else {}
   }
 
   String? _validateUsernameField(String? value) {
@@ -236,25 +234,32 @@ class _SignUpState extends State<SignUp> {
       );
 
       if (resp == null) {
-        MediaApi().uploadFile(
-          email,
-          type: MediaType.image,
-          file: image as File,
-          onUpdate: (String msg, [int? _]) =>
-              setState(() => _loadingText = msg),
-          onComplete: (String msg) {
-            setState(() => _loadingText = msg);
-            _saveUser();
-          },
-          onError: (String msg) {
-            setState(() {
-              _loadingText = null;
-              _submitLock = false;
-            });
-            debugPrint(msg);
-            _handleRejection("image-error");
-          },
-        );
+        if (image != null) {
+          MediaApi().uploadFile(
+            email,
+            type: MediaType.image,
+            file: image as File,
+            onUpdate: (String msg, [int? _]) =>
+                setState(() => _loadingText = msg),
+            onComplete: (String msg) {
+              setState(() => _loadingText = msg);
+              _saveUser();
+            },
+            onError: (String msg) {
+              setState(() {
+                _loadingText = null;
+                _submitLock = false;
+              });
+              debugPrint(msg);
+              _handleRejection("image-error");
+            },
+          );
+        } else {
+          setState(() {
+            _loadingText = "Please upload an image!";
+            _submitLock = false;
+          });
+        }
       } else {
         setState(() {
           _loadingText = null;
