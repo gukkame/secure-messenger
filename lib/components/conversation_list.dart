@@ -12,10 +12,10 @@ class ConversationList extends StatefulWidget {
   const ConversationList({
     super.key,
     required this.name,
-    required this.messageText,
-    required this.imageUrl,
-    required this.time,
-    required this.isMessageRead,
+    this.messageText = "",
+    this.imageUrl = "",
+    this.time = "",
+    this.isMessageRead = true,
   });
 
   @override

@@ -33,9 +33,9 @@ class ContactsApi extends Api {
     try {
       List<BasicUserInfo> friends = [];
 
-      var data = (await readPath(
-              collection: "friends", path: Convert.encrypt(user.email)))
-          .data() as Map<String, dynamic>;
+      var data = (await readPath(collection: "friends", path: user.email))
+          .data() as Map<String, dynamic>?;
+      if (data == null) return [];
 
       for (var entry in data["friends"].entries) {
         // Add getting the last message sent between these two people
