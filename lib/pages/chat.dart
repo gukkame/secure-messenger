@@ -53,39 +53,80 @@ class _ChatState extends State<Chat> {
   }
 
   Widget _message(index) {
-    return Container(
-      padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
-      child: Align(
-        alignment: (messages[index].messageType == "receiver" ||
+    return GestureDetector(
+      onDoubleTap: () => messages[index].messageType == "sender"
+          ? _editDeleteMessage(context, index)
+          : '',
+      child: Container(
+        padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
+        child: Align(
+          alignment: (messages[index].messageType == "receiver" ||
+                  messages[index].messageType == "typing"
+              ? Alignment.topLeft
+              : Alignment.topRight),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: (messages[index].messageType == "receiver" ||
+                      messages[index].messageType == "typing"
+                  ? Colors.grey.shade200
+                  : Colors.blue[200]),
+            ),
+            padding: const EdgeInsets.all(13),
+            child: Column(
+              crossAxisAlignment: messages[index].messageType == "receiver" ||
+                      messages[index].messageType == "typing"
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.end,
+              children: [
+                Text(
+                  messages[index].messageContent,
+                  style: const TextStyle(fontSize: 15),
+                ),
                 messages[index].messageType == "typing"
-            ? Alignment.topLeft
-            : Alignment.topRight),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: (messages[index].messageType == "receiver" ||
-                    messages[index].messageType == "typing"
-                ? Colors.grey.shade200
-                : Colors.blue[200]),
-          ),
-          padding: const EdgeInsets.all(13),
-          child: Column(
-            crossAxisAlignment: messages[index].messageType == "receiver" ||
-                    messages[index].messageType == "typing"
-                ? CrossAxisAlignment.start
-                : CrossAxisAlignment.end,
-            children: [
-              Text(
-                messages[index].messageContent,
-                style: const TextStyle(fontSize: 15),
-              ),
-              messages[index].messageType == "typing"
-                  ? const SizedBox.shrink()
-                  : _messageInfo(index),
-            ],
+                    ? const SizedBox.shrink()
+                    : _messageInfo(index),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Future _editDeleteMessage(context, index) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController textFieldController = TextEditingController();
+
+        return AlertDialog(
+          title: const Text('Edit/Delete message'),
+          content: TextField(
+            controller: textFieldController,
+            decoration: const InputDecoration(
+              hintText: 'Enter your text',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() => messages[index].messageContent = "Deleted");
+                Navigator.pop(context);
+              },
+              child: const Text('Delete'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() =>
+                    messages[index].messageContent = textFieldController.text);
+                Navigator.pop(context);
+              },
+              child: const Text('Edit'),
+            ),
+          ],
+        );
+      },
     );
   }
 
