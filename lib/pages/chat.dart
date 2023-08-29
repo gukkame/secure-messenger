@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/chat_input_field.dart';
+import '../components/typing_indicator.dart';
 import '../utils/navigation.dart';
 
 class ChatMessage {
@@ -20,6 +21,8 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
+  bool _isSomeoneTyping = true;
+
   @override
   Widget build(BuildContext context) {
     var arg = Arguments.from(context).arg?[0];
@@ -53,19 +56,22 @@ class _ChatState extends State<Chat> {
     return Container(
       padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
       child: Align(
-        alignment: (messages[index].messageType == "receiver"
+        alignment: (messages[index].messageType == "receiver" ||
+                messages[index].messageType == "typing"
             ? Alignment.topLeft
             : Alignment.topRight),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: (messages[index].messageType == "receiver"
+            color: (messages[index].messageType == "receiver" ||
+                    messages[index].messageType == "typing"
                 ? Colors.grey.shade200
                 : Colors.blue[200]),
           ),
           padding: const EdgeInsets.all(13),
           child: Column(
-            crossAxisAlignment: messages[index].messageType == "receiver"
+            crossAxisAlignment: messages[index].messageType == "receiver" ||
+                    messages[index].messageType == "typing"
                 ? CrossAxisAlignment.start
                 : CrossAxisAlignment.end,
             children: [
@@ -73,7 +79,9 @@ class _ChatState extends State<Chat> {
                 messages[index].messageContent,
                 style: const TextStyle(fontSize: 15),
               ),
-              _messageInfo(index),
+              messages[index].messageType == "typing"
+                  ? const SizedBox.shrink()
+                  : _messageInfo(index),
             ],
           ),
         ),
@@ -146,8 +154,20 @@ class _ChatState extends State<Chat> {
 
   List<ChatMessage> messages = [
     //! Get data from DataBase
+    //! If typing is true then add extra message at the end of List to call rebuild ListView and add Typing message
+
+    /*
+        ChatMessage(
+        messageContent: "Typing...", messageType: "typing", read: false),
+    
+     */
+
     ChatMessage(
         messageContent: "Hello, Will", messageType: "receiver", read: true),
+    ChatMessage(
+        messageContent: "How have you been?",
+        messageType: "receiver",
+        read: true),
     ChatMessage(
         messageContent: "How have you been?",
         messageType: "receiver",
@@ -200,5 +220,7 @@ class _ChatState extends State<Chat> {
         messageContent: "Is there any thing wrong?",
         messageType: "sender",
         read: false),
+    // ChatMessage(
+    //     messageContent: "Typing...", messageType: "typing", read: false),
   ];
 }
