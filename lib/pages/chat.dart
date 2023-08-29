@@ -25,13 +25,15 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
-    var arg = Arguments.from(context).arg?[0];
+    String name = Arguments.from(context).arg?[0];
+    bool privateChat = Arguments.from(context).arg?[1];
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        flexibleSpace: SafeArea(child: _appBarContainer(arg)),
+        flexibleSpace: SafeArea(child: _appBarContainer(name)),
       ),
       body: Column(
         children: [
@@ -46,7 +48,7 @@ class _ChatState extends State<Chat> {
               },
             ),
           ),
-          const ChatInputField(),
+          ChatInputField(privateChat: privateChat),
         ],
       ),
     );

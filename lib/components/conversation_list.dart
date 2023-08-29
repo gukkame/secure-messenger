@@ -8,12 +8,14 @@ class ConversationList extends StatefulWidget {
   String imageUrl;
   String time;
   bool isMessageRead;
+  bool privateChat;
   ConversationList(
       {required this.name,
       required this.messageText,
       required this.imageUrl,
       required this.time,
-      required this.isMessageRead});
+      required this.isMessageRead,
+      required this.privateChat});
   @override
   _ConversationListState createState() => _ConversationListState();
 }
@@ -24,11 +26,12 @@ class _ConversationListState extends State<ConversationList> {
     return GestureDetector(
       onTap: () {
         navigate(context, "/chat", args: {
-          "arg": [widget.name]
+          "arg": [widget.name, widget.privateChat]
         });
       },
       child: Container(
-        padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 10),
+        padding:
+            const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 10),
         child: Row(
           children: <Widget>[
             Expanded(

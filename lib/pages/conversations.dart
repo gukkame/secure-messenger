@@ -92,6 +92,7 @@ class _ConversationPageState extends State<ConversationPage> {
             imageUrl: chatUsers[index].imageURL,
             time: chatUsers[index].time,
             isMessageRead: (index == 0 || index == 3) ? true : false,
+            privateChat: private,
           );
         },
       ),

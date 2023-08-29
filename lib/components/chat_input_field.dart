@@ -14,7 +14,8 @@ import 'container.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ChatInputField extends StatefulWidget {
-  const ChatInputField({super.key});
+  bool privateChat;
+  ChatInputField({required this.privateChat});
 
   @override
   State<ChatInputField> createState() => _ChatInputFieldState();
@@ -41,6 +42,8 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
   @override
   Widget build(BuildContext context) {
+    print("private");
+    print(widget.privateChat);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -68,12 +71,14 @@ class _ChatInputFieldState extends State<ChatInputField> {
             borderSize: 2,
             child: Row(
               children: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.photo),
-                  onPressed: () {
-                    _pickImage();
-                  },
-                ),
+                widget.privateChat
+                    ? const SizedBox(width: 20,)
+                    : IconButton(
+                        icon: const Icon(Icons.photo),
+                        onPressed: () {
+                          _pickImage();
+                        },
+                      ),
                 Expanded(
                   child: TextField(
                     controller: _textEditingController,
@@ -86,15 +91,17 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     textInputAction: TextInputAction.newline,
                   ),
                 ),
-                GestureDetector(
-                  onLongPressStart: (details) {
-                    _start();
-                  },
-                  onLongPressEnd: (details) {
-                    _stop();
-                  },
-                  child: Icon(_isRecording ? Icons.stop : Icons.mic),
-                ),
+                widget.privateChat
+                    ? const SizedBox.shrink()
+                    : GestureDetector(
+                        onLongPressStart: (details) {
+                          _start();
+                        },
+                        onLongPressEnd: (details) {
+                          _stop();
+                        },
+                        child: Icon(_isRecording ? Icons.stop : Icons.mic),
+                      ),
                 IconButton(
                   icon: const Icon(Icons.send),
                   onPressed: () {
