@@ -30,19 +30,20 @@ class _ChatState extends State<Chat> {
         backgroundColor: Colors.white,
         flexibleSpace: SafeArea(child: _appBarContainer(arg)),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          ListView.builder(
-            itemCount: messages.length,
-            shrinkWrap: true,
-            padding: const EdgeInsets.only(top: 10, bottom: 10),
-            // physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              return _message(index);
-            },
+          Flexible(
+            child: ListView.builder(
+              itemCount: messages.length,
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              // physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                return _message(index);
+              },
+            ),
           ),
-          const Align(
-              alignment: Alignment.bottomCenter, child: ChatInputField()),
+          const ChatInputField(),
         ],
       ),
     );
@@ -50,7 +51,7 @@ class _ChatState extends State<Chat> {
 
   Widget _message(index) {
     return Container(
-      padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+      padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
       child: Align(
         alignment: (messages[index].messageType == "receiver"
             ? Alignment.topLeft

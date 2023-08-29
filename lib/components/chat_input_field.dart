@@ -61,7 +61,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.all(28.0),
+          padding: const EdgeInsets.fromLTRB(27, 5, 27, 20),
           child: RoundedGradientContainer(
             gradient:
                 const LinearGradient(colors: [Colors.black, Colors.black]),
