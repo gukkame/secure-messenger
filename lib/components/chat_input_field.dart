@@ -36,7 +36,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
   void dispose() {
     _timer?.cancel();
     _audioRecorder.dispose();
-
     super.dispose();
   }
 
@@ -93,8 +92,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
                   },
                   onLongPressEnd: (details) {
                     _stop();
-                    // setState(() {
-                    // });
                   },
                   child: Icon(_isRecording ? Icons.stop : Icons.mic),
                 ),

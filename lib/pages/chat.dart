@@ -5,7 +5,11 @@ import '../utils/navigation.dart';
 class ChatMessage {
   String messageContent;
   String messageType;
-  ChatMessage({required this.messageContent, required this.messageType});
+  bool read;
+  ChatMessage(
+      {required this.messageContent,
+      required this.messageType,
+      required this.read});
 }
 
 class Chat extends StatefulWidget {
@@ -18,7 +22,7 @@ class Chat extends StatefulWidget {
 class _ChatState extends State<Chat> {
   @override
   Widget build(BuildContext context) {
-    var arg = Arguments.from(context).arg;
+    var arg = Arguments.from(context).arg?[0];
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -33,20 +37,20 @@ class _ChatState extends State<Chat> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.arrow_back,
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 2,
                 ),
-                CircleAvatar(
+                const CircleAvatar(
                   backgroundImage: NetworkImage(
                       "<https://randomuser.me/api/portraits/men/5.jpg>"),
                   maxRadius: 20,
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 12,
                 ),
                 Expanded(
@@ -55,24 +59,12 @@ class _ChatState extends State<Chat> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                        "Kriss Benwat",
-                        style: TextStyle(
+                        arg.toString(),
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(
-                        height: 6,
-                      ),
-                      Text(
-                        "Online",
-                        style: TextStyle(
-                            color: Colors.grey.shade600, fontSize: 13),
                       ),
                     ],
                   ),
-                ),
-                Icon(
-                  Icons.settings,
-                  color: Colors.black54,
                 ),
               ],
             ),
@@ -81,16 +73,15 @@ class _ChatState extends State<Chat> {
       ),
       body: Stack(
         children: [
-          // Text(arg.toString()),
           ListView.builder(
             itemCount: messages.length,
             shrinkWrap: true,
-            padding: EdgeInsets.only(top: 10, bottom: 10),
-            physics: NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(top: 10, bottom: 10),
+            physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               return Container(
-                padding:
-                    EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+                padding: const EdgeInsets.only(
+                    left: 14, right: 14, top: 10, bottom: 10),
                 child: Align(
                   alignment: (messages[index].messageType == "receiver"
                       ? Alignment.topLeft
@@ -102,17 +93,48 @@ class _ChatState extends State<Chat> {
                           ? Colors.grey.shade200
                           : Colors.blue[200]),
                     ),
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      messages[index].messageContent,
-                      style: TextStyle(fontSize: 15),
+                    padding: const EdgeInsets.all(13),
+                    child: Column(
+                      crossAxisAlignment:
+                          messages[index].messageType == "receiver"
+                              ? CrossAxisAlignment.start
+                              : CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          messages[index].messageContent,
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 3, bottom: 0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                "11:22(Send time)  ",
+                                style: TextStyle(
+                                    color: Colors.black45, fontSize: 13),
+                              ),
+                              messages[index].read &&
+                                      messages[index].messageType == "sender"
+                                  ? const Icon(
+                                      Icons.done_all,
+                                      size: 16,
+                                      color: Colors.blue,
+                                    )
+                                  : const SizedBox.shrink(),
+                            ],
+                          ),
+                        )
+                      ],
                     ),
                   ),
                 ),
               );
             },
           ),
-          Align(alignment: Alignment.bottomCenter, child: ChatInputField()),
+          const Align(
+              alignment: Alignment.bottomCenter, child: ChatInputField()),
         ],
       ),
     );
@@ -120,13 +142,23 @@ class _ChatState extends State<Chat> {
 
   List<ChatMessage> messages = [
     //! Get data from DataBase
-    ChatMessage(messageContent: "Hello, Will", messageType: "receiver"),
-    ChatMessage(messageContent: "How have you been?", messageType: "receiver"),
+    ChatMessage(
+        messageContent: "Hello, Will", messageType: "receiver", read: true),
+    ChatMessage(
+        messageContent: "How have you been?",
+        messageType: "receiver",
+        read: true),
     ChatMessage(
         messageContent: "Hey Kriss, I am doing fine dude. wbu?",
-        messageType: "sender"),
-    ChatMessage(messageContent: "ehhhh, doing OK.", messageType: "receiver"),
+        messageType: "sender",
+        read: true),
     ChatMessage(
-        messageContent: "Is there any thing wrong?", messageType: "sender"),
+        messageContent: "ehhhh, doing OK.",
+        messageType: "receiver",
+        read: true),
+    ChatMessage(
+        messageContent: "Is there any thing wrong?",
+        messageType: "sender",
+        read: false),
   ];
 }
