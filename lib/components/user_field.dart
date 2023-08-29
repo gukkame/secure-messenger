@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../api/friends_api.dart';
-import '../../api/search_api.dart';
-import '../api/invites_api.dart';
+import '../api/contacts_api.dart';
 import '../utils/colors.dart';
 import '../utils/user.dart';
 import 'container.dart';
@@ -35,46 +33,24 @@ class UserField extends StatefulWidget {
 class _UserFieldState extends State<UserField> {
   bool deleted = false;
 
-  void _deleteFriend() async {
-    var resp = await FriendsApi().removeFriend(widget.user, widget.email);
+  void _removeFriend() async {
+    var resp = await ContactsApi().removeFriend(widget.user, widget.email);
     if (resp != null) {
       widget.setErrorState(resp);
     } else {
-      setState(() {
-        deleted = true;
-      });
+      setState(() => deleted = true);
       widget.resetState();
     }
   }
 
-  void _acceptFriendRequest() async {
-    var resp = await InvitesApi()
-        .acceptInvite(widget.user, widget.email, widget.username);
+  void _addFriend() async {
+    var resp = await ContactsApi().addFriend(
+      widget.user,
+      widget.email,
+      widget.username,
+    );
     if (resp != null) {
-      widget.setErrorState("You already accepted friend request!");
-    } else {
-      debugPrint("accepted friend request: $resp");
-      widget.resetState();
-    }
-  }
-
-  void _declineFriendRequest() async {
-    var resp = await InvitesApi()
-        .declineInvite(widget.user, widget.email, widget.username);
-    if (resp != null) {
-      widget.setErrorState("Cant decline friend request");
-    } else {
-      debugPrint("declined friend request: $resp");
-      widget.resetState();
-    }
-  }
-
-  void _sendFriendRequest() async {
-    var resp = await SearchApi()
-        .sendFriendRequest(widget.user, widget.email, widget.username);
-    if (resp != null) {
-      widget.setErrorState(
-          "This user is already your friend or\nyou've already sent them a friend request!");
+      widget.setErrorState("This user is already your friend");
     } else {
       widget.resetState();
     }
@@ -97,47 +73,7 @@ class _UserFieldState extends State<UserField> {
             size: 32,
             color: Colors.white,
           ),
-          onPressed: _deleteFriend,
-        ),
-      ),
-    );
-  }
-
-  Widget get _acceptBtn {
-    return TextButton(
-      style: TextButton.styleFrom(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          alignment: Alignment.centerRight),
-      onPressed: _acceptFriendRequest,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 11.0),
-        child: Text(
-          "Accept",
-          style: TextStyle(
-              color: primeColor.withOpacity(0.9),
-              fontWeight: FontWeight.bold,
-              fontSize: 14.0),
-        ),
-      ),
-    );
-  }
-
-  Widget get _declineBtn {
-    return TextButton(
-      style: TextButton.styleFrom(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          alignment: Alignment.centerRight),
-      onPressed: _declineFriendRequest,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 11.0),
-        child: Text(
-          "Decline",
-          style: TextStyle(
-              color: primeColor.withOpacity(0.9),
-              fontWeight: FontWeight.bold,
-              fontSize: 14.0),
+          onPressed: _removeFriend,
         ),
       ),
     );
@@ -147,21 +83,10 @@ class _UserFieldState extends State<UserField> {
     void Function()? action;
     String title = "";
     if (widget.type == "Add") {
-      action = _sendFriendRequest;
+      action = _addFriend;
       title = "Add";
-    } else if (widget.type == "Outbound") {
-      title = "Invited";
-    } else if (widget.type == "Friend") {
-      return const SizedBox(
-        height: 50,
-      );
-    } else if (widget.type == "Inbound") {
-      return Row(
-        children: [
-          _declineBtn,
-          _acceptBtn,
-        ],
-      );
+    } else {
+      throw UnimplementedError("No widget type added: ${widget.type}");
     }
 
     return TextButton(
@@ -171,14 +96,8 @@ class _UserFieldState extends State<UserField> {
           alignment: Alignment.centerRight),
       onPressed: action,
       child: Container(
-        decoration: widget.type == "Outbound"
-            ? BoxDecoration(
-                color: primeColorTrans,
-                borderRadius: BorderRadius.circular(12.0),
-              )
-            : BoxDecoration(
-                gradient: primeGradient,
-                borderRadius: BorderRadius.circular(12.0)),
+        decoration: BoxDecoration(
+            gradient: primeGradient, borderRadius: BorderRadius.circular(6.0)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 11.0),
           child: Text(

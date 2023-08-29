@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:secure_messenger/provider/provider_manager.dart';
-import 'package:secure_messenger/provider/provider_manager.dart';
 import '../utils/convert.dart';
-import '../utils/user.dart';
 import '../utils/user.dart';
 import 'api.dart';
 
@@ -27,10 +25,10 @@ class UserApi extends Api {
       await write(
         collection: "friends",
         path: email,
-        data: {"friends": {}, "outbound": {}, "inbound": {}},
+        data: {"friends": {}},
       );
       await write(
-         collection: "chats",
+        collection: "chats",
         path: Convert.encrypt(email),
         data: {},
       );

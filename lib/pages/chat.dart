@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../components/chat_input_field.dart';
-import '../utils/navigation.dart';
 
 class ChatMessage {
   String messageContent;
@@ -12,13 +11,12 @@ class Chat extends StatefulWidget {
   const Chat({super.key});
 
   @override
-  State<Chat> createState() => _ChatState();
+  State<Chat> createState() => _ChatMessageState();
 }
 
-class _ChatState extends State<Chat> {
+class _ChatMessageState extends State<Chat> {
   @override
   Widget build(BuildContext context) {
-    var arg = Arguments.from(context).arg;
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -26,27 +24,27 @@ class _ChatState extends State<Chat> {
         backgroundColor: Colors.white,
         flexibleSpace: SafeArea(
           child: Container(
-            padding: EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 16),
             child: Row(
               children: <Widget>[
                 IconButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.arrow_back,
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 2,
                 ),
-                CircleAvatar(
+                const CircleAvatar(
                   backgroundImage: NetworkImage(
                       "<https://randomuser.me/api/portraits/men/5.jpg>"),
                   maxRadius: 20,
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 12,
                 ),
                 Expanded(
@@ -54,12 +52,12 @@ class _ChatState extends State<Chat> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text(
+                      const Text(
                         "Kriss Benwat",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 6,
                       ),
                       Text(
@@ -70,7 +68,7 @@ class _ChatState extends State<Chat> {
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.settings,
                   color: Colors.black54,
                 ),
@@ -85,12 +83,12 @@ class _ChatState extends State<Chat> {
           ListView.builder(
             itemCount: messages.length,
             shrinkWrap: true,
-            padding: EdgeInsets.only(top: 10, bottom: 10),
-            physics: NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(top: 10, bottom: 10),
+            physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               return Container(
-                padding:
-                    EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+                padding: const EdgeInsets.only(
+                    left: 14, right: 14, top: 10, bottom: 10),
                 child: Align(
                   alignment: (messages[index].messageType == "receiver"
                       ? Alignment.topLeft
@@ -102,17 +100,20 @@ class _ChatState extends State<Chat> {
                           ? Colors.grey.shade200
                           : Colors.blue[200]),
                     ),
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       messages[index].messageContent,
-                      style: TextStyle(fontSize: 15),
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ),
                 ),
               );
             },
           ),
-          Align(alignment: Alignment.bottomCenter, child: ChatInputField()),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ChatInputField(),
+          ),
         ],
       ),
     );

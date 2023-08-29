@@ -46,17 +46,8 @@ class _LogInState extends State<LogIn> {
         _redirect();
       },
     );
-    auth.canCheckBiometrics.then((value) {
-      if (value) {
-        auth.isDeviceSupported().then((value2) {
-          if (value2) {
-            setState(() {
-              _enableBio = true;
-            });
-          }
-        });
-      }
-    });
+    _enableFingerPrintLogin();
+    _getSharedPreferenceInstance();
     super.initState();
   }
 
@@ -348,7 +339,6 @@ class _LogInState extends State<LogIn> {
   /* On Successful Login */
 
   void _setUser() {
-    
     ProviderManager().setUser(context, widget.user);
 
     String email = _emailController.value.text;

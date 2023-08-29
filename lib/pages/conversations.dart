@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/colors.dart';
 
-import '../components/app_bar.dart';
 import '../components/bottom_nav_bar.dart';
 import '../components/conversation_list.dart';
-import 'chat.dart';
 
 class ChatUsers {
   String name;
-  // String messageText;
   String imageURL;
   String time;
-  ChatUsers(
-      {required this.name,
-      // required this.messageText,
-      required this.imageURL,
-      required this.time});
+  ChatUsers({required this.name, required this.imageURL, required this.time});
 }
 
 class ConversationPage extends StatefulWidget {
@@ -26,12 +19,13 @@ class ConversationPage extends StatefulWidget {
 }
 
 class _ConversationPageState extends State<ConversationPage> {
+  bool private = true;
   List<ChatUsers> chatUsers = [
     ChatUsers(
         name: "Jane Russel",
         // messageText: "Awesome Setup", //! Unnecaserry
         imageURL: "images/userImage1.jpeg",
-        time: "Now"),//! Unecassery
+        time: "Now"), //! Unecassery
     ChatUsers(
         name: "Glady's Murphy",
         // messageText: "That's Great",
@@ -69,12 +63,11 @@ class _ConversationPageState extends State<ConversationPage> {
         time: "18 Feb"),
   ];
 
-  bool private = true;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: private ? Text("Private chat") : Text("Public chat"),
+        title: private ? const Text("Private chat") : const Text("Public chat"),
         actions: <Widget>[_privateChatBtn],
         backgroundColor: primeColor,
         shadowColor: Colors.transparent,
@@ -119,10 +112,10 @@ class _ConversationPageState extends State<ConversationPage> {
                   color: primeColorDark.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(6.0)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 23.0, vertical: 6.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 23.0, vertical: 6.0),
                 child: Text(
-                  private ? "to public" : "to private",
-                  // : "Sell",
+                  private ? "Public" : "Private",
                   style: const TextStyle(
                     color: Colors.white70,
                   ),

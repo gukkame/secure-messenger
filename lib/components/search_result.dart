@@ -3,15 +3,14 @@ import 'package:secure_messenger/components/user_field.dart';
 
 import '../provider/provider_manager.dart';
 
-class SearchResult {
+class SearchResult extends StatelessWidget {
   final String email;
   final String name;
+  final void Function() resetState;
+  final void Function(String) setErrorState;
 
-  Widget toWidget(
-    BuildContext context, {
-    required void Function() resetState,
-    required void Function(String) setErrorState,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(children: [
@@ -28,5 +27,11 @@ class SearchResult {
     );
   }
 
-  SearchResult({required this.email, required this.name});
+  const SearchResult({
+    super.key,
+    required this.email,
+    required this.name,
+    required this.resetState,
+    required this.setErrorState,
+  });
 }

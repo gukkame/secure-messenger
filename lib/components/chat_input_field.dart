@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound_record/flutter_sound_record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:secure_messenger/utils/colors.dart';
 import 'container.dart';
 
 import 'package:image_picker/image_picker.dart';
@@ -21,12 +19,11 @@ class ChatInputField extends StatefulWidget {
 }
 
 class _ChatInputFieldState extends State<ChatInputField> {
-  TextEditingController _textEditingController = TextEditingController();
+  final TextEditingController _textEditingController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   File? image;
   // FlutterSoundRecord? _recorder;
   Timer? _timer;
-  int _recordDuration = 0;
   late String _filePath;
 
   final FlutterSoundRecord _audioRecorder = FlutterSoundRecord();
@@ -140,7 +137,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     debugPrint("start");
     try {
       if (await _audioRecorder.hasPermission()) {
-        debugPrint("permision granted");
+        debugPrint("permission granted");
 
         setState(() => _isRecording = true);
 
@@ -148,7 +145,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _filePath = '${directory.path}/audio.mp3';
         await _audioRecorder.start(path: _filePath);
       } else {
-        debugPrint("no permision");
+        debugPrint("no permission");
         await _requestPermissions();
         setState(() => _isRecording = false);
       }
@@ -172,14 +169,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
         debugPrint(e.toString());
       }
     }
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() => _recordDuration++);
-    });
   }
 
   Future<bool> _requestPermissions() async {
