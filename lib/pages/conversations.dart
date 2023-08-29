@@ -6,7 +6,6 @@ import 'package:secure_messenger/utils/colors.dart';
 
 import '../components/bottom_nav_bar.dart';
 import '../components/conversation_list.dart';
-import '../utils/chat_users.dart';
 
 class ConversationPage extends StatefulWidget {
   const ConversationPage({super.key});
