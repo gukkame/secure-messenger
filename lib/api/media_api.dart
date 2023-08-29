@@ -96,4 +96,8 @@ class MediaApi {
         return throw UnimplementedError("audio fetching not implemented");
     }
   }
+
+  Future<String> getProfilePictureLink(String path) {
+    return _storage.child(path).getDownloadURL();
+  }
 }

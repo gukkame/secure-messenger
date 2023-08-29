@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/api/contacts_api.dart';
 import 'package:secure_messenger/provider/provider_manager.dart';
+import 'package:secure_messenger/utils/basic_user_info.dart';
 import 'package:secure_messenger/utils/colors.dart';
 
 import '../components/bottom_nav_bar.dart';
@@ -16,7 +17,7 @@ class ConversationPage extends StatefulWidget {
 
 class _ConversationPageState extends State<ConversationPage> {
   bool private = true;
-  List<ChatUsers>? chatUsers;
+  List<BasicUserInfo>? chatUsers;
 
   @override
   void initState() {
@@ -26,9 +27,7 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _getChatUsers() async {
     var user = ProviderManager().getUser(context);
-    var friends = await ContactsApi().getFriends(user);
-    chatUsers =
-        friends.map((e) => ChatUsers(name: e.name, image: e.image)).toList();
+    chatUsers = await ContactsApi().getFriends(user);
     setState(() {});
   }
 
@@ -52,7 +51,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   padding: const EdgeInsets.only(top: 16),
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
-                    return ConversationList(name: chatUsers![index].name);
+                    return ConversationList(chatUsers![index]);
                   },
                 ),
       bottomNavigationBar: const BottomNavBar(

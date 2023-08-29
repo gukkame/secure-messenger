@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/utils/basic_user_info.dart';
 
 import '../utils/navigation.dart';
 
 class ConversationList extends StatefulWidget {
-  final String name;
-  final String messageText;
-  final Image image;
-  final String time;
-  final bool isMessageRead;
+  final BasicUserInfo user;
 
-  const ConversationList({
+  const ConversationList(
+    this.user, {
     super.key,
-    required this.name,
-    required this.image,
-    this.messageText = "",
-    this.time = "",
-    this.isMessageRead = true,
   });
 
   @override
@@ -27,9 +20,7 @@ class _ConversationListState extends State<ConversationList> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        navigate(context, "/chat", args: {
-          "arg": [widget.name]
-        });
+        navigate(context, "/chat", args: {"arg": widget.user});
       },
       child: Container(
         padding:
@@ -49,20 +40,21 @@ class _ConversationListState extends State<ConversationList> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            widget.name,
+                            widget.user.name,
                             style: const TextStyle(fontSize: 16),
                           ),
                           const SizedBox(
                             height: 6,
                           ),
                           Text(
-                            widget.messageText,
+                            widget.user.lastMessage?.body ?? "",
                             style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,
-                                fontWeight: widget.isMessageRead
-                                    ? FontWeight.bold
-                                    : FontWeight.normal),
+                                fontWeight:
+                                    widget.user.lastMessage?.seen ?? true
+                                        ? FontWeight.bold
+                                        : FontWeight.normal),
                           ),
                         ],
                       ),
@@ -72,10 +64,10 @@ class _ConversationListState extends State<ConversationList> {
               ),
             ),
             Text(
-              widget.time,
+              widget.user.lastMessage?.date.toString() ?? "",
               style: TextStyle(
                   fontSize: 12,
-                  fontWeight: widget.isMessageRead
+                  fontWeight: widget.user.lastMessage?.seen ?? true
                       ? FontWeight.bold
                       : FontWeight.normal),
             ),

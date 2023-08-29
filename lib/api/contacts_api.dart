@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:secure_messenger/api/media_api.dart';
 import 'package:secure_messenger/api/user_api.dart';
 import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'package:secure_messenger/utils/media_type.dart';
 import 'api.dart';
 
 import '../utils/convert.dart';
@@ -41,24 +39,16 @@ class ContactsApi extends Api {
       if (data == null) return [];
 
       for (var entry in data["friends"].entries) {
-        var userData = await UserApi().getUserInfo(email: entry.key);
+        var userData = await UserApi().getUserInfo(email: Convert.decrypt(entry.key));
         if (userData == null) {
           debugPrint("Couldn't find user info for ${entry.key}");
           continue;
         }
-
-        //* Add getting the last message sent
         friends.add(
           BasicUserInfo(
             email: Convert.decrypt(entry.key),
             name: entry.value,
-            image: await MediaApi().fetchFile(
-              path: userData["image"],
-              type: MediaType.image,
-              onUpdate: (_, [__]) {},
-              onComplete: (_) {},
-              onError: (_) {},
-            ),
+            image: userData["image"],
           ),
         );
       }

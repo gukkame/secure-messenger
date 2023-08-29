@@ -1,25 +1,24 @@
-import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/message.dart';
 
 class BasicUserInfo {
   final String _name;
   final String _email;
-  final Image? _image;
+  final String? _imageUrl;
   final Message? _lastMessage;
 
   String get name => _name;
   String get email => _email;
-  Image get image => _image as Image;
+  String get imageUrl => _imageUrl as String;
   Message? get lastMessage => _lastMessage;
 
   const BasicUserInfo({
     required String email,
     required String name,
-    Image? image,
+    String? image,
     Message? lastMessage,
   })  : _email = email,
         _name = name,
-        _image = image,
+        _imageUrl = image,
         _lastMessage = lastMessage;
 
   @override
@@ -28,12 +27,15 @@ class BasicUserInfo {
       return other.email == email &&
           other.name == name &&
           other.lastMessage == lastMessage &&
-          other.image == image;
+          other.imageUrl == imageUrl;
     }
     return super == other;
   }
 
   @override
   int get hashCode =>
-      _name.hashCode ^ _email.hashCode ^ _lastMessage.hashCode ^ image.hashCode;
+      _name.hashCode ^
+      _email.hashCode ^
+      _lastMessage.hashCode ^
+      imageUrl.hashCode;
 }
