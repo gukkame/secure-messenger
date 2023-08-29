@@ -53,10 +53,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                // image: DecorationImage(
-                //   image: FileImage(image!),
-                //   fit: BoxFit.cover,
-                // ),
+                image: DecorationImage(
+                  image: FileImage(image!),
+                  fit: BoxFit.cover,
+                ),
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
@@ -137,11 +137,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
   }
 
   Future<void> _start() async {
-    print("start");
+    debugPrint("start");
     try {
       if (await _audioRecorder.hasPermission()) {
-        // await _audioRecorder.start();
-        print("permision granted");
+        debugPrint("permision granted");
 
         setState(() => _isRecording = true);
 
@@ -149,27 +148,28 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _filePath = '${directory.path}/audio.mp3';
         await _audioRecorder.start(path: _filePath);
       } else {
-        print("no permision");
+        debugPrint("no permision");
         await _requestPermissions();
+        setState(() => _isRecording = false);
       }
     } catch (e) {
       if (kDebugMode) {
-        print(e);
+        debugPrint(e.toString());
       }
     }
   }
 
   Future<void> _stop() async {
     try {
-      print("stop recording");
+      debugPrint("stop recording");
       setState(() {
         _isRecording = false;
       });
       await _audioRecorder.stop();
-      print(_audioRecorder.toString());
+      debugPrint(_audioRecorder.toString());
     } catch (e) {
       if (kDebugMode) {
-        print(e);
+        debugPrint(e.toString());
       }
     }
   }
