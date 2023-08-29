@@ -23,4 +23,8 @@ class ProviderManager extends ChangeNotifier {
       userProvider.complete = true;
     }
   }
+
+    Future<void> logOut(BuildContext context) async {
+    await getUser(context).logOut();
+  }
 }

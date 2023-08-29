@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../components/app_bar.dart';
 import '../components/bottom_nav_bar.dart';
+import '../provider/provider_manager.dart';
 import '../screens/profile.dart';
+import '../utils/navigation.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,14 +14,33 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
- @override
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: CustomAppBar(title: "Profile"),
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Profile"),
+            IconButton(
+              onPressed: logOut,
+              icon: const Icon(
+                Icons.logout,
+              ),
+            ),
+          ],
+        ),
+        automaticallyImplyLeading: false,
+      ),
       body: Profile(),
       bottomNavigationBar: BottomNavBar(
         index: 2,
       ),
     );
+  }
+
+  void logOut() async {
+    await ProviderManager().logOut(context);
+    navigate(context, "/login");
   }
 }
