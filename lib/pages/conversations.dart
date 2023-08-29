@@ -8,12 +8,12 @@ import 'chat.dart';
 
 class ChatUsers {
   String name;
-  String messageText;
+  // String messageText;
   String imageURL;
   String time;
   ChatUsers(
       {required this.name,
-      required this.messageText,
+      // required this.messageText,
       required this.imageURL,
       required this.time});
 }
@@ -29,42 +29,42 @@ class _ConversationPageState extends State<ConversationPage> {
   List<ChatUsers> chatUsers = [
     ChatUsers(
         name: "Jane Russel",
-        messageText: "Awesome Setup",
+        // messageText: "Awesome Setup", //! Unnecaserry
         imageURL: "images/userImage1.jpeg",
-        time: "Now"),
+        time: "Now"),//! Unecassery
     ChatUsers(
         name: "Glady's Murphy",
-        messageText: "That's Great",
+        // messageText: "That's Great",
         imageURL: "images/userImage2.jpeg",
         time: "Yesterday"),
     ChatUsers(
         name: "Jorge Henry",
-        messageText: "Hey where are you?",
+        // messageText: "Hey where are you?",
         imageURL: "images/userImage3.jpeg",
         time: "31 Mar"),
     ChatUsers(
         name: "Philip Fox",
-        messageText: "Busy! Call me in 20 mins",
+        // messageText: "Busy! Call me in 20 mins",
         imageURL: "images/userImage4.jpeg",
         time: "28 Mar"),
     ChatUsers(
         name: "Debra Hawkins",
-        messageText: "Thankyou, It's awesome",
+        // messageText: "Thankyou, It's awesome",
         imageURL: "images/userImage5.jpeg",
         time: "23 Mar"),
     ChatUsers(
         name: "Jacob Pena",
-        messageText: "will update you in evening",
+        // messageText: "will update you in evening",
         imageURL: "images/userImage6.jpeg",
         time: "17 Mar"),
     ChatUsers(
         name: "Andrey Jones",
-        messageText: "Can you please share the file?",
+        // messageText/: "Can you please share the file?",
         imageURL: "images/userImage7.jpeg",
         time: "24 Feb"),
     ChatUsers(
         name: "John Wick",
-        messageText: "How are you?",
+        // messageText: "How are you?",
         imageURL: "images/userImage8.jpeg",
         time: "18 Feb"),
   ];
@@ -88,7 +88,7 @@ class _ConversationPageState extends State<ConversationPage> {
         itemBuilder: (context, index) {
           return ConversationList(
             name: chatUsers[index].name,
-            messageText: chatUsers[index].messageText,
+            messageText: "",
             imageUrl: chatUsers[index].imageURL,
             time: chatUsers[index].time,
             isMessageRead: (index == 0 || index == 3) ? true : false,
