@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:secure_messenger/api/user_api.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/media_api.dart';
@@ -238,6 +239,14 @@ class _SignUpState extends State<SignUp> {
         _submitLock = true;
       });
 
+      if (image == null) {
+        setState(() {
+          _loadingText = "Please pick an image!";
+          _submitLock = false;
+        });
+        return;
+      }
+
       var name = _usernameController.value.text;
       var email = _emailController.value.text;
       var password = _passwordController.value.text;
@@ -253,14 +262,21 @@ class _SignUpState extends State<SignUp> {
       if (resp == null) {
         if (image != null) {
           MediaApi().uploadFile(
-            email,
+            MediaApi().toPath(
+              email,
+              file: image as File,
+              type: MediaType.image,
+            ),
             type: MediaType.image,
             file: image as File,
             onUpdate: (String msg, [int? _]) =>
                 setState(() => _loadingText = msg),
-            onComplete: (String msg) {
+            onComplete: (
+                {required String msg, required String fileLink}) async {
               setState(() => _loadingText = msg);
-              _saveUser();
+              UserApi().updateProfilePicture(email: email, link: fileLink);
+              await _setUser(email);
+              redirect();
             },
             onError: (String msg) {
               setState(() {
@@ -322,12 +338,27 @@ class _SignUpState extends State<SignUp> {
     setState(() => {});
   }
 
-  void _saveUser() {
-    debugPrint("User registered successfully! redirecting...");
+  Future<void> _setUser(String email) async {
+    var user = await UserApi().getUserInfo(email: email);
+    if (user == null) {
+      throw Exception("Internal server error. Please contact support");
+    }
+    widget.user.key = user["key"];
+    widget.user.image = image as File;
+
+    if (!mounted) throw Exception("App unmounted before user was set");
+
     ProviderManager().setUser(context, widget.user);
-    pref.setString("email", _emailController.value.text);
-    pref.setString("password", _passwordController.value.text);
-    navigate(context, "/contacts");
+    _saveCredentialsLocally();
+  }
+
+  void _saveCredentialsLocally() {
+    String email = _emailController.value.text;
+    String password = _passwordController.value.text;
+    SharedPreferences.getInstance().then((SharedPreferences pref) {
+      pref.setString("email", email);
+      pref.setString("password", password);
+    });
   }
 
   void _removeAllNegativeCheckers() {
@@ -382,6 +413,10 @@ class _SignUpState extends State<SignUp> {
                     fontSize: 20.0),
               )),
         ));
+  }
+
+  void redirect() {
+    navigate(context, "/contacts");
   }
 
   @override
