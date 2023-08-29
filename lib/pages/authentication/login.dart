@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../components/border_color.dart';
 import '../../provider/provider_manager.dart';
 import '../../components/container.dart';
 import '../../components/scaffold.dart';
@@ -14,6 +18,8 @@ class LogIn extends StatefulWidget {
 }
 
 class _LogInState extends State<LogIn> {
+  late SharedPreferences pref;
+  final LocalAuthentication auth = LocalAuthentication();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
@@ -23,23 +29,48 @@ class _LogInState extends State<LogIn> {
   String? _passErr;
   String? _loadingText;
   bool _submitLock = false;
+  bool _enableBio = false;
 
+  /* Initialization */
   @override
   void initState() {
-    widget.user
-        .signInUser(
-      email: "laura@gmail.com",
-      password: "pass123",
-    )
-        .then(
-      (value) {
-        debugPrint("resp: $value");
-        _setUser();
-        _redirect();
-      },
-    );
+    // widget.user
+    //     .signInUser(
+    //   email: "laura@gmail.com",
+    //   password: "pass123",
+    // )
+    //     .then(
+    //   (value) {
+    //     debugPrint("resp: $value");
+    //     _setUser();
+    //     _redirect();
+    //   },
+    // );
+    _enableFingerPrintLogin();
+    _getSharedPreferenceInstance();
     super.initState();
   }
+
+  void _enableFingerPrintLogin() async {
+    try {
+      _enableBio =
+          await auth.isDeviceSupported() || await auth.canCheckBiometrics;
+      debugPrint("Fingerprint log in available: $_enableBio");
+      setState(() {});
+    } catch (e) {
+      debugPrint("Fingerprint bio check error ${e.toString()}");
+    }
+  }
+
+  void _getSharedPreferenceInstance() async {
+    try {
+      pref = await SharedPreferences.getInstance();
+    } catch (e) {
+      debugPrint("Shared preference error: ${e.toString()}");
+    }
+  }
+
+  /* Email Login Widget */
 
   Widget _createInputField(
     String hintText,
@@ -168,21 +199,7 @@ class _LogInState extends State<LogIn> {
         _loadingText = "Processing data...";
         _submitLock = true;
       });
-      String? resp = await widget.user.signInUser(
-        email: _emailController.value.text,
-        password: _passController.value.text,
-      );
-      if (resp != null) {
-        setState(() {
-          _loadingText = null;
-          _submitLock = false;
-        });
-        _handleDBRejection(resp);
-        setState(() {});
-      } else {
-        _setUser();
-        _redirect();
-      }
+      await _logInUser();
     } else {
       debugPrint("Invalid");
       setState(() {
@@ -192,12 +209,104 @@ class _LogInState extends State<LogIn> {
     }
   }
 
-  void _removeAllNegativeCheckers() {
-    emailCheck = BorderColor.neutral;
-    passCheck = BorderColor.neutral;
-    _emailErr = null;
-    _passErr = null;
-    _loadingText = null;
+  /* Fingerprint Log in */
+
+  List<Widget> get _fingerPrint {
+    if (!_enableBio) return [];
+    return [
+      IconButton(
+        iconSize: 50,
+        onPressed: _checkFingerprint,
+        icon: const Icon(
+          Icons.fingerprint,
+          color: primeColor,
+          size: 50,
+        ),
+      ),
+      const SizedBox(height: 10),
+    ];
+  }
+
+  void _checkFingerprint() async {
+    bool authenticated = false;
+    try {
+      setState(() {
+        _submitLock = true;
+        _loadingText = 'Authenticating...';
+      });
+      authenticated = await auth.authenticate(
+        localizedReason: 'Log in via fingerprint',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+      setState(() {
+        _submitLock = false;
+      });
+      debugPrint("authenticate: $authenticated");
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+      setState(() {
+        _submitLock = false;
+        _loadingText = 'Error: ${e.message}';
+      });
+      return;
+    } catch (e) {
+      setState(() {
+        _submitLock = false;
+        _loadingText = 'Error: ${e.toString()}';
+      });
+      return;
+    }
+
+    debugPrint("authenticate: $authenticated");
+
+    if (!mounted) {
+      debugPrint("no longer mounted");
+      return;
+    }
+
+    if (!authenticated) {
+      setState(() {
+        _loadingText = "Couldn't authenticate via fingerprint";
+      });
+      return;
+    }
+
+    var email = pref.getString("email");
+    var password = pref.getString("password");
+    if (email != null && password != null) {
+      _logInUser(
+        email: email,
+        password: password,
+      );
+    } else {
+      setState(() {
+        _submitLock = false;
+        _loadingText =
+            "No user assigned to this fingerprint, please log in via email";
+      });
+    }
+  }
+
+  /* Login Functionality */
+
+  Future<void> _logInUser({String? email, String? password}) async {
+    String? resp = await widget.user.signInUser(
+      email: email ?? _emailController.value.text,
+      password: password ?? _passController.value.text,
+    );
+    if (resp != null) {
+      setState(() {
+        _loadingText = null;
+        _submitLock = false;
+      });
+      _handleDBRejection(resp);
+    } else {
+      _setUser();
+      _redirect();
+    }
   }
 
   void _handleDBRejection(String msg) {
@@ -216,11 +325,31 @@ class _LogInState extends State<LogIn> {
         emailCheck = BorderColor.error;
         passCheck = BorderColor.error;
     }
+    setState(() {});
   }
+
+  void _removeAllNegativeCheckers() {
+    emailCheck = BorderColor.neutral;
+    passCheck = BorderColor.neutral;
+    _emailErr = null;
+    _passErr = null;
+    _loadingText = null;
+  }
+
+  /* On Successful Login */
 
   void _setUser() {
     
     ProviderManager().setUser(context, widget.user);
+
+    String email = _emailController.value.text;
+    String password = _passController.value.text;
+    if (password.isNotEmpty) {
+      SharedPreferences.getInstance().then((SharedPreferences pref) {
+        pref.setString("email", email);
+        pref.setString("password", password);
+      });
+    }
   }
 
   void _redirect() {
@@ -235,31 +364,34 @@ class _LogInState extends State<LogIn> {
       rounding: 20,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _title,
-              const SizedBox(
-                height: 28,
-              ),
-              _emailField,
-              const SizedBox(height: 20),
-              _passField,
-              SizedBox(height: _loadingText != null ? 20 : 0),
-              _loading,
-              const SizedBox(height: 20),
-              _redirectButton,
-              const SizedBox(height: 30),
-              _submitButton,
-            ],
+        child: Column(children: [
+          const Spacer(),
+          Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _title,
+                const SizedBox(
+                  height: 28,
+                ),
+                _emailField,
+                const SizedBox(height: 20),
+                _passField,
+                SizedBox(height: _loadingText != null ? 20 : 0),
+                _loading,
+                const SizedBox(height: 20),
+                _redirectButton,
+                const SizedBox(height: 30),
+                _submitButton,
+              ],
+            ),
           ),
-        ),
+          const Spacer(),
+          ..._fingerPrint,
+        ]),
       ),
     );
   }
 }
-
-enum BorderColor { neutral, error, correct }
