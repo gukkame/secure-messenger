@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
+
 class ChatUsers {
   String name;
-  String? imageURL;
+  Image? image;
   String? time;
-  ChatUsers({required this.name, this.imageURL, this.time});
+  ChatUsers({required this.name, this.image, this.time});
 }

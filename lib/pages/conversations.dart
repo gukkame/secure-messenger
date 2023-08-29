@@ -27,7 +27,8 @@ class _ConversationPageState extends State<ConversationPage> {
   void _getChatUsers() async {
     var user = ProviderManager().getUser(context);
     var friends = await ContactsApi().getFriends(user);
-    chatUsers = friends.map((e) => ChatUsers(name: user.name)).toList();
+    chatUsers =
+        friends.map((e) => ChatUsers(name: e.name, image: e.image)).toList();
     setState(() {});
   }
 

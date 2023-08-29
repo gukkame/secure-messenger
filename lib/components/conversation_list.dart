@@ -5,15 +5,15 @@ import '../utils/navigation.dart';
 class ConversationList extends StatefulWidget {
   final String name;
   final String messageText;
-  final String imageUrl;
+  final Image image;
   final String time;
   final bool isMessageRead;
 
   const ConversationList({
     super.key,
     required this.name,
+    required this.image,
     this.messageText = "",
-    this.imageUrl = "",
     this.time = "",
     this.isMessageRead = true,
   });

@@ -47,7 +47,7 @@ class _LogInState extends State<LogIn> {
         .then(
       (value) async {
         debugPrint("resp: $value");
-        await _setUser(password);
+        await _setUser(email);
         _redirect();
       },
     );
