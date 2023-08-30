@@ -12,8 +12,8 @@ import 'container.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ChatInputField extends StatefulWidget {
-  bool privateChat;
-  ChatInputField({super.key, required this.privateChat});
+  final bool privateChat;
+  const ChatInputField({super.key, required this.privateChat});
 
   @override
   State<ChatInputField> createState() => _ChatInputFieldState();
@@ -67,7 +67,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
             child: Row(
               children: <Widget>[
                 widget.privateChat
-                    ? const SizedBox(width: 20,)
+                    ? const SizedBox(
+                        width: 20,
+                      )
                     : IconButton(
                         icon: const Icon(Icons.photo),
                         onPressed: () {
