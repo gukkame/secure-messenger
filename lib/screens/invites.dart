@@ -41,9 +41,9 @@ class _InviteScreenState extends State<InviteScreen> {
         ? allData["outbound"].entries.toList()
         : outboundUsers;
 
-    debugPrint("inbound: ${allData}");
-    debugPrint("inbound: ${inboundUsers}");
-    debugPrint("outbound: ${outboundUsers}");
+    debugPrint("inbound: $allData");
+    debugPrint("inbound: $inboundUsers");
+    debugPrint("outbound: $outboundUsers");
     debugPrint("new dada added");
     setState(() {});
   }

@@ -34,18 +34,18 @@ class _LogInState extends State<LogIn> {
   /* Initialization */
   @override
   void initState() {
-    // widget.user
-    //     .signInUser(
-    //   email: "laura@gmail.com",
-    //   password: "pass123",
-    // )
-    //     .then(
-    //   (value) {
-    //     debugPrint("resp: $value");
-    //     _setUser();
-    //     _redirect();
-    //   },
-    // );
+    widget.user
+        .signInUser(
+      email: "laura@gmail.com",
+      password: "pass123",
+    )
+        .then(
+      (value) {
+        debugPrint("resp: $value");
+        _setUser();
+        _redirect();
+      },
+    );
     _enableFingerPrintLogin();
     _getSharedPreferenceInstance();
     super.initState();
