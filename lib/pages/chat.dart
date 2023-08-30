@@ -1,17 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/utils/media_type.dart';
+import 'package:secure_messenger/utils/message.dart';
 import '../components/chat_input_field.dart';
-import '../components/typing_indicator.dart';
 import '../utils/navigation.dart';
-
-class ChatMessage {
-  String messageContent;
-  String messageType;
-  bool read;
-  ChatMessage(
-      {required this.messageContent,
-      required this.messageType,
-      required this.read});
-}
 
 class Chat extends StatefulWidget {
   const Chat({super.key});
@@ -21,11 +13,12 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
-  bool _isSomeoneTyping = true;
+  final bool _isTyping = true;
 
   @override
   Widget build(BuildContext context) {
-    String name = Arguments.from(context).arg?[0];
+    String name = Arguments.from(context).arg?[0].name;
+    String email = Arguments.from(context).arg?[0].email;
     bool privateChat = Arguments.from(context).arg?[1];
 
     return Scaffold(
@@ -33,61 +26,63 @@ class _ChatState extends State<Chat> {
         elevation: 0,
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        flexibleSpace: SafeArea(child: _appBarContainer(name)),
+        flexibleSpace: SafeArea(child: _appBarContainer(name, _isTyping)),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Flexible(
-            child: ListView.builder(
-              itemCount: messages.length,
-              shrinkWrap: true,
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              // physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                return _message(index);
-              },
-            ),
+          Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: messages.length,
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(top: 10, bottom: 10),
+                  // physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return _message(index, email);
+                  },
+                ),
+              ),
+            ],
           ),
-          ChatInputField(privateChat: privateChat),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ChatInputField(privateChat: privateChat),
+          ),
         ],
       ),
     );
   }
 
-  Widget _message(index) {
+  Widget _message(index, email) {
     return GestureDetector(
-      onDoubleTap: () => messages[index].messageType == "sender"
+      onDoubleTap: () => messages[index].sender != email
           ? _editDeleteMessage(context, index)
           : '',
       child: Container(
         padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
         child: Align(
-          alignment: (messages[index].messageType == "receiver" ||
-                  messages[index].messageType == "typing"
+          alignment: (messages[index].sender == email
               ? Alignment.topLeft
               : Alignment.topRight),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              color: (messages[index].messageType == "receiver" ||
-                      messages[index].messageType == "typing"
+              color: (messages[index].sender == email
                   ? Colors.grey.shade200
                   : Colors.blue[200]),
             ),
             padding: const EdgeInsets.all(13),
             child: Column(
-              crossAxisAlignment: messages[index].messageType == "receiver" ||
-                      messages[index].messageType == "typing"
+              crossAxisAlignment: messages[index].sender == email
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
                 Text(
-                  messages[index].messageContent,
+                  messages[index].body,
                   style: const TextStyle(fontSize: 15),
                 ),
-                messages[index].messageType == "typing"
-                    ? const SizedBox.shrink()
-                    : _messageInfo(index),
+                _messageInfo(index, email),
               ],
             ),
           ),
@@ -113,15 +108,14 @@ class _ChatState extends State<Chat> {
           actions: [
             TextButton(
               onPressed: () {
-                setState(() => messages[index].messageContent = "Deleted");
+                setState(() => messages[index].body = "Deleted");
                 Navigator.pop(context);
               },
               child: const Text('Delete'),
             ),
             TextButton(
               onPressed: () {
-                setState(() =>
-                    messages[index].messageContent = textFieldController.text);
+                setState(() => messages[index].body = textFieldController.text);
                 Navigator.pop(context);
               },
               child: const Text('Edit'),
@@ -132,18 +126,18 @@ class _ChatState extends State<Chat> {
     );
   }
 
-  Widget _messageInfo(index) {
+  Widget _messageInfo(index, email) {
     return Padding(
       padding: const EdgeInsets.only(top: 3, bottom: 0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Text(
-            "11:22(Send time)  ",
-            style: TextStyle(color: Colors.black45, fontSize: 13),
+          Text(
+            '${messages[index].date.toDate().hour.toString()}:${messages[index].date.toDate().minute.toString()}',
+            style: const TextStyle(color: Colors.black45, fontSize: 13),
           ),
-          messages[index].read && messages[index].messageType == "sender"
+          messages[index].seen && messages[index].sender != email
               ? const Icon(
                   Icons.done_all,
                   size: 16,
@@ -155,9 +149,9 @@ class _ChatState extends State<Chat> {
     );
   }
 
-  Widget _appBarContainer(arg) {
+  Widget _appBarContainer(arg, isTyping) {
     return Container(
-      padding: EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.only(right: 16),
       child: Row(
         children: <Widget>[
           IconButton(
@@ -187,6 +181,15 @@ class _ChatState extends State<Chat> {
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w600),
                 ),
+                isTyping
+                    ? const Text(
+                        "Typing...",
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54),
+                      )
+                    : const SizedBox.shrink()
               ],
             ),
           ),
@@ -195,75 +198,26 @@ class _ChatState extends State<Chat> {
     );
   }
 
-  List<ChatMessage> messages = [
+  List<Message> messages = [
     //! Get data from DataBase
     //! If typing is true then add extra message at the end of List to call rebuild ListView and add Typing message
-
-    /*
-        ChatMessage(
-        messageContent: "Typing...", messageType: "typing", read: false),
-    
-     */
-
-    ChatMessage(
-        messageContent: "Hello, Will", messageType: "receiver", read: true),
-    ChatMessage(
-        messageContent: "How have you been?",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "How have you been?",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Hey Kriss, I am doing fine dude. wbu?",
-        messageType: "sender",
-        read: true),
-    ChatMessage(
-        messageContent: "ehhhh, doing OK.",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Is there any thing wrong?",
-        messageType: "sender",
-        read: false),
-    ChatMessage(
-        messageContent: "Hello, Will", messageType: "receiver", read: true),
-    ChatMessage(
-        messageContent: "How have you been?",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Hey Kriss, I am doing fine dude. wbu?",
-        messageType: "sender",
-        read: true),
-    ChatMessage(
-        messageContent: "ehhhh, doing OK.",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Is there any thing wrong?",
-        messageType: "sender",
-        read: false),
-    ChatMessage(
-        messageContent: "Hello, Will", messageType: "receiver", read: true),
-    ChatMessage(
-        messageContent: "How have you been?",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Hey Kriss, I am doing fine dude. wbu?",
-        messageType: "sender",
-        read: true),
-    ChatMessage(
-        messageContent: "ehhhh, doing OK.",
-        messageType: "receiver",
-        read: true),
-    ChatMessage(
-        messageContent: "Is there any thing wrong?",
-        messageType: "sender",
-        read: false),
-    // ChatMessage(
-    //     messageContent: "Typing...", messageType: "typing", read: false),
+    Message(
+        date: Timestamp.now(),
+        type: MediaType.text,
+        body: "Hello beautiful!",
+        seen: true,
+        sender: "cola@gmail.com"),
+    Message(
+        date: Timestamp.now(),
+        type: MediaType.text,
+        body: "Heyy!",
+        seen: true,
+        sender: "laura@gmail.com"),
+    Message(
+        date: Timestamp.now(),
+        type: MediaType.text,
+        body: "How are you?",
+        seen: false,
+        sender: "laura@gmail.com"),
   ];
 }

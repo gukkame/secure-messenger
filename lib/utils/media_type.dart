@@ -1,4 +1,5 @@
 enum MediaType {
+  text,
   image,
   video,
   audio,
@@ -7,6 +8,8 @@ enum MediaType {
 extension MediaTypeExtension on MediaType {
   String get str {
     switch (this) {
+      case MediaType.text:
+        return "text";
       case MediaType.image:
         return 'image';
       case MediaType.video:

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:secure_messenger/api/media_api.dart';
+import 'package:secure_messenger/api/user_api.dart';
+import 'package:secure_messenger/utils/media_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../components/border_color.dart';
 import '../../provider/provider_manager.dart';
@@ -34,29 +37,22 @@ class _LogInState extends State<LogIn> {
   /* Initialization */
   @override
   void initState() {
+    String email = "laura@gmail.com";
+    String password = "pass123";
     widget.user
         .signInUser(
-      email: "laura@gmail.com",
-      password: "pass123",
+      email: email,
+      password: password,
     )
         .then(
-      (value) {
+      (value) async {
         debugPrint("resp: $value");
-        _setUser();
+        await _setUser(email);
         _redirect();
       },
     );
-    auth.canCheckBiometrics.then((value) {
-      if (value) {
-        auth.isDeviceSupported().then((value2) {
-          if (value2) {
-            setState(() {
-              _enableBio = true;
-            });
-          }
-        });
-      }
-    });
+    _enableFingerPrintLogin();
+    _getSharedPreferenceInstance();
     super.initState();
   }
 
@@ -313,7 +309,7 @@ class _LogInState extends State<LogIn> {
       });
       _handleDBRejection(resp);
     } else {
-      _setUser();
+      await _setUser(email ?? _emailController.value.text);
       _redirect();
     }
   }
@@ -347,13 +343,34 @@ class _LogInState extends State<LogIn> {
 
   /* On Successful Login */
 
-  void _setUser() {
-    
-    ProviderManager().setUser(context, widget.user);
+  Future<void> _setUser(String email) async {
+    var user = await UserApi().getUserInfo(email: email);
+    if (user == null) {
+      throw Exception("Internal server error. Please contact support");
+    }
 
+    var image = await MediaApi().fetchFile(
+      path: user["image"] as String,
+      type: MediaType.image,
+      returnFile: true,
+      onUpdate: (_, [__]) {},
+      onComplete: (_) {},
+      onError: (_) {},
+    );
+
+    widget.user.key = user["key"];
+    widget.user.image = image;
+
+    if (!mounted) throw Exception("App unmounted before user was set");
+
+    ProviderManager().setUser(context, widget.user);
+    _saveCredentialsLocally();
+  }
+
+  void _saveCredentialsLocally() {
     String email = _emailController.value.text;
     String password = _passController.value.text;
-    if (password.isNotEmpty) {
+    if (password.isNotEmpty && email.isNotEmpty) {
       SharedPreferences.getInstance().then((SharedPreferences pref) {
         pref.setString("email", email);
         pref.setString("password", password);

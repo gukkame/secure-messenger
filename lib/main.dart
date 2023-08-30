@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:secure_messenger/pages/search.dart';
 import 'package:secure_messenger/pages/chat.dart';
 import 'package:secure_messenger/utils/colors.dart';
 
@@ -43,7 +42,6 @@ class MainApp extends StatelessWidget {
           '/chat': (context) => const Chat(),
           '/profile': (context) => const ProfilePage(),
           '/user-profile': (context) => const UserProfilePage(),
-          '/search': (context) => const SearchPage(),
         },
       ),
     );
