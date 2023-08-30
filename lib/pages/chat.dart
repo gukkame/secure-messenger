@@ -1,7 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/api/media_api.dart';
+import 'package:secure_messenger/api/user_api.dart';
+import 'package:secure_messenger/utils/basic_user_info.dart';
+import 'package:secure_messenger/utils/colors.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:secure_messenger/utils/message.dart';
+import 'package:secure_messenger/utils/user.dart';
+import '../api/message_api.dart';
 import '../components/chat_input_field.dart';
 import '../utils/navigation.dart';
 
@@ -13,41 +19,130 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
-  final bool _isTyping = true;
+  late User user;
+  late BasicUserInfo recipient;
+  late bool isPrivate;
+  final MessageApi _msgApi = MessageApi();
+  String? _recipientImageUrl;
+  String _chatId = "";
+  bool _isTyping = false;
+  bool _loading = true;
+  List<Message> _messages = [];
+
+  @override
+  void didChangeDependencies() {
+    recipient = Arguments.from(context).arg?[0];
+    isPrivate = Arguments.from(context).arg?[1];
+    _getRecipientImageUrl();
+    _initMessages();
+    super.didChangeDependencies();
+  }
+
+  void _getRecipientImageUrl() async {
+    var recipientUserInfo = await UserApi().getUserInfo(email: recipient.email);
+    if (recipientUserInfo == null) {
+      throw Exception("chat: Couldn't load recipients user data");
+    }
+    _recipientImageUrl =
+        await MediaApi().getProfilePictureLink(recipientUserInfo["image"]);
+    setState(() {});
+  }
+
+  void _initMessages() async {
+    await _getMessages();
+    _setListener();
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  Future<void> _getMessages() async {
+    List<Message> newMessages = [];
+
+    debugPrint("getting messages");
+
+    // Getting chat log or creating a new
+    _chatId = _msgApi.createDocId(recipient.email, user.email, isPrivate);
+    var resp = await _msgApi.getMessages(_chatId);
+    debugPrint("check 1 done: $resp");
+    if (resp == null) {
+      _chatId = _msgApi.createDocId(user.email, recipient.email, isPrivate);
+      resp = await _msgApi.getMessages(_chatId);
+      debugPrint("check 2 done: $resp");
+
+      if (resp == null) {
+        await _msgApi.createNewChatRoom(_chatId, user.email, recipient.email);
+        debugPrint("new chat room created");
+      }
+    }
+
+    if (resp != null) {
+      for (var msg in resp) {
+        newMessages.add(Message(
+          date: msg["date"],
+          type: MediaTypeUtils.from(msg["type"]),
+          body: msg["body"],
+          seen: msg["seen"],
+          sender: msg["sender"],
+          setState: setState,
+        ));
+      }
+    }
+
+    _messages = newMessages;
+  }
+
+  void _setListener() async {
+    _msgApi.getStream(collection: "chats", path: _chatId).listen((event) {
+      if (event.exists) {
+        var data = event.data() as Map<String, dynamic>?;
+        if (data != null) {
+          var messages = data["messages"] as List<dynamic>;
+          var isRecipientTyping = data["${recipient.email}_typing"] as bool;
+
+          if (messages.length > _messages.length) {
+            // add new messages to the here
+          }
+          _isTyping = isRecipientTyping;
+          setState(() {});
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    String name = Arguments.from(context).arg?[0].name;
-    String email = Arguments.from(context).arg?[0].email;
-    bool privateChat = Arguments.from(context).arg?[1];
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        flexibleSpace: SafeArea(child: _appBarContainer(name, _isTyping)),
+        flexibleSpace:
+            SafeArea(child: _appBarContainer(recipient.name, _isTyping)),
       ),
       body: Stack(
         children: [
           Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: ListView.builder(
-                  itemCount: messages.length,
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(top: 10, bottom: 10),
-                  // physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    return _message(index, email);
-                  },
-                ),
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        itemCount: _messages.length,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.only(top: 10, bottom: 10),
+                        itemBuilder: (context, index) {
+                          return _message(index, recipient.email);
+                        },
+                      ),
               ),
             ],
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: ChatInputField(privateChat: privateChat),
+            child: ChatInputField(privateChat: isPrivate),
           ),
         ],
       ),
@@ -56,30 +151,30 @@ class _ChatState extends State<Chat> {
 
   Widget _message(index, email) {
     return GestureDetector(
-      onDoubleTap: () => messages[index].sender != email
+      onDoubleTap: () => _messages[index].sender != email
           ? _editDeleteMessage(context, index)
           : '',
       child: Container(
         padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
         child: Align(
-          alignment: (messages[index].sender == email
+          alignment: (_messages[index].sender == email
               ? Alignment.topLeft
               : Alignment.topRight),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              color: (messages[index].sender == email
+              color: (_messages[index].sender == email
                   ? Colors.grey.shade200
                   : Colors.blue[200]),
             ),
             padding: const EdgeInsets.all(13),
             child: Column(
-              crossAxisAlignment: messages[index].sender == email
+              crossAxisAlignment: _messages[index].sender == email
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
                 Text(
-                  messages[index].body,
+                  _messages[index].body,
                   style: const TextStyle(fontSize: 15),
                 ),
                 _messageInfo(index, email),
@@ -108,14 +203,15 @@ class _ChatState extends State<Chat> {
           actions: [
             TextButton(
               onPressed: () {
-                setState(() => messages[index].body = "Deleted");
+                setState(() => _messages[index].body = "Deleted");
                 Navigator.pop(context);
               },
               child: const Text('Delete'),
             ),
             TextButton(
               onPressed: () {
-                setState(() => messages[index].body = textFieldController.text);
+                setState(
+                    () => _messages[index].body = textFieldController.text);
                 Navigator.pop(context);
               },
               child: const Text('Edit'),
@@ -134,10 +230,10 @@ class _ChatState extends State<Chat> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${messages[index].date.toDate().hour.toString()}:${messages[index].date.toDate().minute.toString()}',
+            '${_messages[index].date.toDate().hour.toString()}:${_messages[index].date.toDate().minute.toString()}',
             style: const TextStyle(color: Colors.black45, fontSize: 13),
           ),
-          messages[index].seen && messages[index].sender != email
+          _messages[index].seen && _messages[index].sender != email
               ? const Icon(
                   Icons.done_all,
                   size: 16,
@@ -163,13 +259,14 @@ class _ChatState extends State<Chat> {
               color: Colors.black,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 2, right: 12),
-            child: CircleAvatar(
-              backgroundImage: NetworkImage(
-                  "<https://randomuser.me/api/portraits/men/5.jpg>"),
-              maxRadius: 20,
-            ),
+          Padding(
+            padding: const EdgeInsets.only(left: 2, right: 12),
+            child: _recipientImageUrl == null
+                ? Container(color: primeColor)
+                : CircleAvatar(
+                    backgroundImage: NetworkImage(_recipientImageUrl as String),
+                    maxRadius: 20,
+                  ),
           ),
           Expanded(
             child: Column(
@@ -197,27 +294,4 @@ class _ChatState extends State<Chat> {
       ),
     );
   }
-
-  List<Message> messages = [
-    //! Get data from DataBase
-    //! If typing is true then add extra message at the end of List to call rebuild ListView and add Typing message
-    Message(
-        date: Timestamp.now(),
-        type: MediaType.text,
-        body: "Hello beautiful!",
-        seen: true,
-        sender: "cola@gmail.com"),
-    Message(
-        date: Timestamp.now(),
-        type: MediaType.text,
-        body: "Heyy!",
-        seen: true,
-        sender: "laura@gmail.com"),
-    Message(
-        date: Timestamp.now(),
-        type: MediaType.text,
-        body: "How are you?",
-        seen: false,
-        sender: "laura@gmail.com"),
-  ];
 }

@@ -40,9 +40,9 @@ class MediaApi {
   }
 
   void _handleUploadProgress(Stream<TaskSnapshot> stream, String type,
-      {required void Function(String msg, [int? progress]) onUpdate,
-      required void Function(String msg) onComplete,
-      required void Function(String msg) onError}) {
+      {void Function(String msg, [int? progress])? onUpdate,
+      void Function(String msg)? onComplete,
+      void Function(String msg)? onError}) {
     try {
       stream.listen((taskSnapshot) {
         switch (taskSnapshot.state) {
@@ -50,27 +50,27 @@ class MediaApi {
             int progress = (100.0 *
                     (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes))
                 .round();
-            onUpdate("Uploading $type: $progress%", progress);
+            (onUpdate ?? (_, [__]) {})("Uploading $type: $progress%", progress);
             break;
           case TaskState.paused:
-            onUpdate("Uploading $type has been paused");
+            (onUpdate ?? (_) {})("Uploading $type has been paused");
             break;
           case TaskState.success:
-            onComplete(
+            (onUpdate ?? (_) {})(
               "$type uploaded successfully.",
             );
             break;
           case TaskState.canceled:
-            onUpdate(
+            (onUpdate ?? (_) {})(
                 "Uploading $type has been canceled. Please contact support");
             break;
           case TaskState.error:
-            onError(taskSnapshot.metadata.toString());
+            (onError ?? (_) {})(taskSnapshot.metadata.toString());
             break;
         }
       });
     } catch (e) {
-      onError(e.toString());
+      (onError ?? (_) {})(e.toString());
     }
   }
 
@@ -78,12 +78,12 @@ class MediaApi {
       {required String path,
       required MediaType type,
       bool returnFile = false,
-      required void Function(String msg, [int? progress]) onUpdate,
-      required void Function(String msg) onComplete,
-      required void Function(String msg) onError}) async {
+      void Function(String msg, [int? progress])? onUpdate,
+      void Function(String msg)? onComplete,
+      void Function(String msg)? onError}) async {
     Uint8List? data = await _storage.child(path).getData();
     if (data == null) {
-      onError("${type.str} has no data");
+      (onError ?? (_) {})("${type.str} has no data");
       return null;
     }
     if (returnFile) return File.fromRawPath(data);
@@ -95,7 +95,7 @@ class MediaApi {
       case MediaType.audio:
         return throw UnimplementedError("audio fetching not implemented");
       case MediaType.text:
-        return throw Exception("Can't fetch text message from storeage.");
+        return throw Exception("Can't fetch text message from storage.");
     }
   }
 
