@@ -24,6 +24,8 @@ dependencies:
   flutter_sound_record: ^3.3.2
   permission_handler: ^10.4.3
   path_provider: ^2.1.0
+  qr_flutter: ^4.1.0
+  qr_code_scanner: ^1.0.1
 
 dev_dependencies:
   flutter_test:

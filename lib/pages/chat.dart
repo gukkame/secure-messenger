@@ -163,14 +163,14 @@ class _ChatState extends State<Chat> {
               color: Colors.black,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 2, right: 12),
-            child: CircleAvatar(
-              backgroundImage: NetworkImage(
-                  "<https://randomuser.me/api/portraits/men/5.jpg>"),
-              maxRadius: 20,
-            ),
-          ),
+          // const Padding(
+          //   padding: EdgeInsets.only(left: 2, right: 12),
+          //   child: CircleAvatar(
+          //     backgroundImage: NetworkImage(
+          //         "<https://randomuser.me/api/portraits/men/5.jpg>"),
+          //     maxRadius: 20,
+          //   ),
+          // ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

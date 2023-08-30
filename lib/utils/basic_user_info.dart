@@ -8,7 +8,7 @@ class BasicUserInfo {
 
   String get name => _name;
   String get email => _email;
-  String get imageUrl => _imageUrl as String;
+  String? get imageUrl => _imageUrl;
   Message? get lastMessage => _lastMessage;
 
   const BasicUserInfo({

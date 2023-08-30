@@ -21,7 +21,7 @@ class UserField extends StatefulWidget {
     this.state,
     required this.user,
     required this.username,
-    required this.email,
+    required this.email, 
     required this.resetState,
     required this.setErrorState,
   });
