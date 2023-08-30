@@ -94,6 +94,8 @@ class MediaApi {
         return throw UnimplementedError("video fetching not implemented");
       case MediaType.audio:
         return throw UnimplementedError("audio fetching not implemented");
+      case MediaType.text:
+        return throw Exception("Can't fetch text message from storeage.");
     }
   }
 

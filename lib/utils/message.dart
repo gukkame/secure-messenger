@@ -5,7 +5,7 @@ class Message {
   final String sender;
   final Timestamp date;
   final MediaType type;
-  final dynamic body;
+   dynamic body;
   final bool seen;
 
   Message({

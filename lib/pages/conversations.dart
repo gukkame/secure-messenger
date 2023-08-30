@@ -50,7 +50,10 @@ class _ConversationPageState extends State<ConversationPage> {
                   padding: const EdgeInsets.only(top: 16),
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
-                    return ConversationList(chatUsers![index]);
+                    return ConversationList(
+                      chatUsers![index],
+                      isPrivate: private,
+                    );
                   },
                 ),
       bottomNavigationBar: const BottomNavBar(
