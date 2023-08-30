@@ -1,12 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/api/media_api.dart';
-import 'package:secure_messenger/api/user_api.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'package:secure_messenger/utils/colors.dart';
 import 'package:secure_messenger/utils/media_type.dart';
-import 'package:secure_messenger/utils/message.dart';
-import 'package:secure_messenger/utils/user.dart';
+
+import '../../api/media_api.dart';
+import '../../api/user_api.dart';
+import '../../provider/provider_manager.dart';
+import '../../utils/basic_user_info.dart';
+import '../../utils/colors.dart';
+import '../../utils/message.dart';
+import '../../utils/user.dart';
 import '../api/message_api.dart';
 import '../components/chat_input_field.dart';
 import '../utils/navigation.dart';
@@ -31,6 +32,7 @@ class _ChatState extends State<Chat> {
 
   @override
   void didChangeDependencies() {
+    user = ProviderManager().getUser(context);
     recipient = Arguments.from(context).arg?[0];
     isPrivate = Arguments.from(context).arg?[1];
     _getRecipientImageUrl();
@@ -59,33 +61,26 @@ class _ChatState extends State<Chat> {
   Future<void> _getMessages() async {
     List<Message> newMessages = [];
 
-    debugPrint("getting messages");
-
     // Getting chat log or creating a new
     _chatId = _msgApi.createDocId(recipient.email, user.email, isPrivate);
     var resp = await _msgApi.getMessages(_chatId);
-    debugPrint("check 1 done: $resp");
     if (resp == null) {
       _chatId = _msgApi.createDocId(user.email, recipient.email, isPrivate);
       resp = await _msgApi.getMessages(_chatId);
-      debugPrint("check 2 done: $resp");
 
       if (resp == null) {
-        await _msgApi.createNewChatRoom(_chatId, user.email, recipient.email);
-        debugPrint("new chat room created");
+        await _msgApi.createNewChatRoom(
+          _chatId,
+          user.email,
+          recipient.email,
+          isPrivate: isPrivate,
+        );
       }
     }
 
     if (resp != null) {
       for (var msg in resp) {
-        newMessages.add(Message(
-          date: msg["date"],
-          type: MediaTypeUtils.from(msg["type"]),
-          body: msg["body"],
-          seen: msg["seen"],
-          sender: msg["sender"],
-          setState: setState,
-        ));
+        newMessages.add(Message.fromMap(msg, setState));
       }
     }
 
@@ -97,11 +92,14 @@ class _ChatState extends State<Chat> {
       if (event.exists) {
         var data = event.data() as Map<String, dynamic>?;
         if (data != null) {
-          var messages = data["messages"] as List<dynamic>;
+          var newMessages = data["messages"] as List<dynamic>;
           var isRecipientTyping = data["${recipient.email}_typing"] as bool;
 
-          if (messages.length > _messages.length) {
-            // add new messages to the here
+          if (newMessages.length > _messages.length) {
+            for (int i = _messages.length; i < newMessages.length; i++) {
+              _messages.add(Message.fromMap(
+                  newMessages[i] as Map<String, dynamic>, setState));
+            }
           }
           _isTyping = isRecipientTyping;
           setState(() {});
@@ -130,11 +128,20 @@ class _ChatState extends State<Chat> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                        itemCount: _messages.length,
+                        itemCount: _messages.length + 1,
                         shrinkWrap: true,
                         padding: const EdgeInsets.only(top: 10, bottom: 10),
                         itemBuilder: (context, index) {
-                          return _message(index, recipient.email);
+                          if (index == 0) {
+                            return const Align(
+                              alignment: Alignment.topCenter,
+                              child: Text(
+                                "This is the start of your conversation.",
+                              ),
+                            );
+                          } else {
+                            return _message(index - 1, recipient.email);
+                          }
                         },
                       ),
               ),
@@ -142,7 +149,11 @@ class _ChatState extends State<Chat> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: ChatInputField(privateChat: isPrivate),
+            child: ChatInputField(
+              loading: _loading,
+              privateChat: isPrivate,
+              chatId: _chatId,
+            ),
           ),
         ],
       ),
@@ -173,10 +184,17 @@ class _ChatState extends State<Chat> {
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
-                Text(
-                  _messages[index].body,
-                  style: const TextStyle(fontSize: 15),
-                ),
+                _messages[index].type == MediaType.text
+                    ? Text(
+                        _messages[index].body,
+                        style: const TextStyle(fontSize: 15),
+                      )
+                    : _messages[index].loading
+                        ? Text(
+                            "Loading ${_messages[index].type.str}...",
+                            style: const TextStyle(fontSize: 15),
+                          )
+                        : _messages[index].body,
                 _messageInfo(index, email),
               ],
             ),

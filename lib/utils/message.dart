@@ -1,14 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:secure_messenger/api/media_api.dart';
-import 'package:secure_messenger/utils/media_type.dart';
+
+import '../../api/media_api.dart';
+import '../../utils/convert.dart';
+import '../../utils/media_type.dart';
 
 class Message {
-  final String sender;
+  late String sender;
   dynamic body;
-  final MediaType type;
-  final Timestamp date;
+  late MediaType type;
+  late Timestamp date;
   final bool seen;
-  final Function setState;
+  final void Function(void Function() fn) setState;
   bool _loading = false;
 
   bool get loading => _loading;
@@ -16,18 +18,32 @@ class Message {
   void _fetchFile() async {
     body = await MediaApi().fetchFile(path: body, type: type);
     _loading = false;
-    setState();
+    setState(() {});
+  }
+
+  static Message fromMap(
+      Map<String, dynamic> data, void Function(void Function() fn) setState) {
+    return Message(
+      sender: data["sender"],
+      body: data["body"],
+      type: data["type"],
+      date: data["date"],
+      seen: data["seen"],
+      setState: setState,
+    );
   }
 
   Message({
-    required this.sender,
+    required String sender,
     required this.body,
-    required this.type,
+    required String type,
     required this.date,
     required this.seen,
     required this.setState,
   }) {
-    if (type != MediaType.text) {
+    this.sender = Convert.decrypt(sender);
+    this.type = MediaTypeUtils.from(type);
+    if (this.type != MediaType.text) {
       _loading = true;
       _fetchFile();
     }

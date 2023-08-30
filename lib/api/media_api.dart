@@ -21,19 +21,20 @@ class MediaApi {
   void uploadFile(String link,
       {required File file,
       required MediaType type,
-      required void Function(String msg, [int? progress]) onUpdate,
-      required void Function({
+      void Function(String msg, [int? progress])? onUpdate,
+      void Function({
         required String msg,
         required String fileLink,
-      }) onComplete,
-      required void Function(String msg) onError}) {
+      })? onComplete,
+      void Function(String msg)? onError}) {
     var task = _storage.child(link).putFile(file).snapshotEvents;
     _handleUploadProgress(
       task,
       type.str,
       onUpdate: onUpdate,
       onComplete: (String msg) {
-        onComplete(msg: msg, fileLink: link);
+        (onComplete ?? ({required String msg, required String fileLink}) {})(
+            msg: msg, fileLink: link);
       },
       onError: onError,
     );
@@ -56,7 +57,7 @@ class MediaApi {
             (onUpdate ?? (_) {})("Uploading $type has been paused");
             break;
           case TaskState.success:
-            (onUpdate ?? (_) {})(
+            (onComplete ?? (_) {})(
               "$type uploaded successfully.",
             );
             break;

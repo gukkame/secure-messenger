@@ -1,7 +1,10 @@
-import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/api/api.dart';
-import 'package:secure_messenger/utils/combine_and_hash.dart';
+
+import '../../api/api.dart';
+import '../../utils/combine_and_hash.dart';
+import '../../utils/convert.dart';
+import '../../utils/media_type.dart';
 
 class MessageApi extends Api {
   String createDocId(String email1, String email2, bool isPrivate) {
@@ -12,6 +15,16 @@ class MessageApi extends Api {
   Future<List<Map<String, dynamic>>?> getMessages(String docId) async {
     try {
       List<Map<String, dynamic>> messages = [];
+      var resp = await readPath(collection: "chats", path: docId);
+      debugPrint("getMessages: ${resp.data().toString()}");
+      if (!resp.exists) return null;
+      var data =
+          (resp.data() as Map<String, dynamic>)["messages"] as List<dynamic>;
+
+      for (var msg in data) {
+        messages.add(msg as Map<String, dynamic>);
+      }
+
       return messages;
     } on FirebaseException catch (e) {
       debugPrint(e.code);
@@ -23,15 +36,43 @@ class MessageApi extends Api {
   }
 
   Future<void> createNewChatRoom(
-      String docId, String email1, String email2) async {
+    String docId,
+    String email1,
+    String email2, {
+    required bool isPrivate,
+  }) async {
     try {
       write(collection: "chats", path: docId, data: {
-        "messages": {},
-        "${email1}_typing": false,
-        "${email2}_typing": false,
+        "messages": [],
+        if (!isPrivate) "${email1}_typing": false,
+        if (!isPrivate) "${email2}_typing": false,
       });
     } catch (e) {
       debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> sendMessage(
+    String docId, {
+    required String sender,
+    required String body,
+    required MediaType type,
+    required Timestamp date,
+  }) async {
+    try {
+      update(collection: "chats", path: docId, data: {
+        "messages": FieldValue.arrayUnion([
+          {
+            "sender": Convert.encrypt(sender),
+            "body": body,
+            "type": type.str,
+            "date": date,
+            "seen": false,
+          }
+        ])
+      });
+    } catch (e) {
+      debugPrint(e.toString());
     }
   }
 }

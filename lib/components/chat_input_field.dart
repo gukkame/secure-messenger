@@ -1,34 +1,56 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound_record/flutter_sound_record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:secure_messenger/provider/provider_manager.dart';
+import 'package:secure_messenger/api/message_api.dart';
+import 'package:secure_messenger/utils/media_type.dart';
+import '../api/media_api.dart';
+import '../utils/user.dart';
 import 'container.dart';
 
 import 'package:image_picker/image_picker.dart';
 
 class ChatInputField extends StatefulWidget {
+  final bool loading;
   final bool privateChat;
-  const ChatInputField({super.key, required this.privateChat});
+  final String chatId;
+
+  const ChatInputField({
+    super.key,
+    required this.loading,
+    required this.privateChat,
+    required this.chatId,
+  });
 
   @override
   State<ChatInputField> createState() => _ChatInputFieldState();
 }
 
 class _ChatInputFieldState extends State<ChatInputField> {
+  late User user;
+  final MessageApi _messageApi = MessageApi();
+  final MediaApi _mediaApi = MediaApi();
   final TextEditingController _textEditingController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   File? image;
-  // FlutterSoundRecord? _recorder;
   Timer? _timer;
   late String _filePath;
 
   final FlutterSoundRecord _audioRecorder = FlutterSoundRecord();
   bool _isRecording = false;
+
+  @override
+  void initState() {
+    user = ProviderManager().getUser(context);
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -72,9 +94,11 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       )
                     : IconButton(
                         icon: const Icon(Icons.photo),
-                        onPressed: () {
-                          _pickImage();
-                        },
+                        onPressed: widget.loading
+                            ? null
+                            : () {
+                                _pickImage();
+                              },
                       ),
                 Expanded(
                   child: TextField(
@@ -91,19 +115,27 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 widget.privateChat
                     ? const SizedBox.shrink()
                     : GestureDetector(
-                        onLongPressStart: (details) {
-                          _start();
-                        },
-                        onLongPressEnd: (details) {
-                          _stop();
-                        },
+                        onLongPressStart: widget.loading
+                            ? null
+                            : (details) {
+                                _start();
+                              },
+                        onLongPressEnd: widget.loading
+                            ? null
+                            : (details) {
+                                _stop();
+                              },
                         child: Icon(_isRecording ? Icons.stop : Icons.mic),
                       ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: () {
-                    sendMessage();
-                  },
+                  onPressed: widget.loading
+                      ? null
+                      : widget.loading
+                          ? null
+                          : () {
+                              sendMessage();
+                            },
                 ),
               ],
             ),
@@ -114,19 +146,45 @@ class _ChatInputFieldState extends State<ChatInputField> {
   }
 
   void sendMessage() {
+    if (_textEditingController.text != "") {
+      debugPrint("Message");
+      debugPrint(_textEditingController.text);
+      _messageApi.sendMessage(
+        widget.chatId,
+        sender: user.email,
+        body: _textEditingController.text,
+        type: MediaType.text,
+        date: Timestamp.now(),
+      );
+    }
+    if (image != null) {
+      String link = _mediaApi.toPath(user.email,
+          file: image as File, type: MediaType.image);
+      _mediaApi.uploadFile(
+        link,
+        file: image as File,
+        type: MediaType.image,
+        onComplete: ({required String fileLink, required String msg}) {
+          debugPrint("Image uploaded! $msg");
+          _messageApi.sendMessage(
+            widget.chatId,
+            sender: user.email,
+            body: fileLink,
+            type: MediaType.image,
+            date: Timestamp.now(),
+          );
+        },
+        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
+        onError: (msg) {
+          throw Exception("IMAGE UPLOAD ERROR: $msg");
+        },
+      );
+    }
+
     setState(() {
       _textEditingController.text = "";
       image = null;
     });
-
-    if (_textEditingController.text != "") {
-      debugPrint("Message");
-      debugPrint(_textEditingController.text);
-      //! Save message in database and send to other user
-    }
-    if (image != null) {
-      //! Save image in database
-    }
   }
 
   void _pickImage() async {
