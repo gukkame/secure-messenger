@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../components/app_bar.dart';
 import '../components/bottom_nav_bar.dart';
 import '../provider/provider_manager.dart';
 import '../screens/profile.dart';
@@ -21,7 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Profile"),
+            const Text("Profile"),
             IconButton(
               onPressed: logOut,
               icon: const Icon(
@@ -32,8 +31,8 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         automaticallyImplyLeading: false,
       ),
-      body: Profile(),
-      bottomNavigationBar: BottomNavBar(
+      body: const Profile(),
+      bottomNavigationBar: const BottomNavBar(
         index: 2,
       ),
     );

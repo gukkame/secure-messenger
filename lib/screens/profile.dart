@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../components/container.dart';
+import '../provider/provider_manager.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -11,14 +12,19 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  String username = 'your_username';
-
-  String email = 'your_email@example.com';
+  late String name;
+  late String email;
+  @override
+  void initState() {
+    name = ProviderManager().getUser(context).name;
+    email = ProviderManager().getUser(context).email;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(10, 100, 10, 100),
+      padding: const EdgeInsets.fromLTRB(10, 100, 10, 100),
       child: Center(
         child: RoundedGradientContainer(
           borderSize: 3,
@@ -26,7 +32,7 @@ class _ProfileState extends State<Profile> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _qrCode,
-              _infoField("Username \n", username),
+              _infoField("Username \n", name),
               _infoField("Email \n", email),
             ],
           ),
@@ -40,7 +46,7 @@ class _ProfileState extends State<Profile> {
       height: 210.0,
       width: 210.0,
       child: QrImageView(
-        data: 'Username: $username\nEmail: $email',
+        data: 'Username: $name\nEmail: $email',
         version: QrVersions.auto,
         size: 210.0,
       ),
