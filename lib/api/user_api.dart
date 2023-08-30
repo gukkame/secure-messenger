@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:secure_messenger/provider/provider_manager.dart';
 import '../utils/convert.dart';
+import '../utils/user.dart';
 import 'api.dart';
 
 class UserApi extends Api {
