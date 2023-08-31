@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/media_type.dart';
-
+import 'package:video_player/video_player.dart';
 import '../../api/media_api.dart';
 import '../../api/user_api.dart';
 import '../../provider/provider_manager.dart';
@@ -10,6 +10,7 @@ import '../../utils/message.dart';
 import '../../utils/user.dart';
 import '../api/message_api.dart';
 import '../components/chat_input_field.dart';
+import '../components/display_video.dart';
 import '../utils/navigation.dart';
 
 class Chat extends StatefulWidget {
@@ -199,8 +200,9 @@ class _ChatState extends State<Chat> {
                                 height: 300,
                                 child: _messages[index].body,
                               )
-                            : SizedBox.shrink(),
-                // : _messages[index].body,
+                            : (_messages[index].type == MediaType.video)
+                                ? DisplayVideo(url: _messages[index].body)
+                                : const SizedBox.shrink(),
                 _messageInfo(index, email),
               ],
             ),
