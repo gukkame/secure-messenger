@@ -92,7 +92,7 @@ class MediaApi {
         }
       case MediaType.audio:
         {
-          return throw UnimplementedError("audio fetching not implemented");
+          return getFileDownloadLink(path);
         }
       case MediaType.video:
         {

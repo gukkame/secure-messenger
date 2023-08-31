@@ -45,7 +45,7 @@ class _DisplayVideoState extends State<DisplayVideo> {
                 ),
               );
             } else {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
           },
         ),

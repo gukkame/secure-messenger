@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/components/display_audio.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:video_player/video_player.dart';
 import '../../api/media_api.dart';
@@ -186,29 +187,39 @@ class _ChatState extends State<Chat> {
                   : CrossAxisAlignment.end,
               children: [
                 _messages[index].type == MediaType.text
-                    ? Text(
-                        _messages[index].body,
-                        style: const TextStyle(fontSize: 15),
-                      )
+                    ? _displayText(index)
                     : _messages[index].loading
                         ? Text(
                             "Loading ${_messages[index].type.str}...",
                             style: const TextStyle(fontSize: 15),
                           )
                         : (_messages[index].type == MediaType.image)
-                            ? SizedBox(
-                                height: 300,
-                                child: _messages[index].body,
-                              )
+                            ? _displayImage(index)
                             : (_messages[index].type == MediaType.video)
                                 ? DisplayVideo(url: _messages[index].body)
-                                : const SizedBox.shrink(),
+                                : (_messages[index].type == MediaType.audio)
+                                    ? DisplayAudio(url: _messages[index].body)
+                                    : const SizedBox.shrink(),
                 _messageInfo(index, email),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _displayImage(index) {
+    return SizedBox(
+      height: 300,
+      child: _messages[index].body,
+    );
+  }
+
+  Widget _displayText(index) {
+    return Text(
+      _messages[index].body,
+      style: const TextStyle(fontSize: 15),
     );
   }
 

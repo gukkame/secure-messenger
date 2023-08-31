@@ -227,6 +227,31 @@ class _ChatInputFieldState extends State<ChatInputField> {
         },
       );
     }
+    // if (_filePath != "") {
+    //   debugPrint("_filePath");
+    //   debugPrint(_filePath);
+    //   String link = _mediaApi.toPath(user.email,
+    //       file: _filePath as File, type: MediaType.audio);
+    //   _mediaApi.uploadFile(
+    //     link,
+    //     file: _filePath as File,
+    //     type: MediaType.audio,
+    //     onComplete: ({required String fileLink, required String msg}) {
+    //       debugPrint("Audio uploaded! $msg");
+    //       _messageApi.sendMessage(
+    //         widget.chatId,
+    //         sender: user.email,
+    //         body: fileLink,
+    //         type: MediaType.audio,
+    //         date: Timestamp.now(),
+    //       );
+    //     },
+    //     onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
+    //     onError: (msg) {
+    //       throw Exception("Audio UPLOAD ERROR: $msg");
+    //     },
+    //   );
+    // }
 
     setState(() {
       _textEditingController.text = "";
@@ -279,7 +304,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
   Future<void> _stop() async {
     try {
       debugPrint("stop recording");
+      uploadAudio();
       setState(() {
+        _filePath = '';
         _isRecording = false;
       });
       await _audioRecorder.stop();
@@ -288,6 +315,32 @@ class _ChatInputFieldState extends State<ChatInputField> {
       if (kDebugMode) {
         debugPrint(e.toString());
       }
+    }
+  }
+
+  void uploadAudio() {
+    if (_filePath != "") {
+      String link = _mediaApi.toPath(user.email,
+          file: File(_filePath), type: MediaType.audio);
+      _mediaApi.uploadFile(
+        link,
+        file: File(_filePath),
+        type: MediaType.audio,
+        onComplete: ({required String fileLink, required String msg}) {
+          debugPrint("Audio uploaded! $msg");
+          _messageApi.sendMessage(
+            widget.chatId,
+            sender: user.email,
+            body: fileLink,
+            type: MediaType.audio,
+            date: Timestamp.now(),
+          );
+        },
+        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
+        onError: (msg) {
+          throw Exception("Audio UPLOAD ERROR: $msg");
+        },
+      );
     }
   }
 
