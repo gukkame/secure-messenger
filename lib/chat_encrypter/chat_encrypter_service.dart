@@ -1,5 +1,4 @@
 import 'package:encrypt/encrypt.dart' as enc;
-import 'package:encrypt/encrypt.dart';
 import 'package:pointycastle/export.dart';
 import 'package:secure_messenger/api/user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';

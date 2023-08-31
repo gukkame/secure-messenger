@@ -97,6 +97,8 @@ class MediaApi {
         return throw UnimplementedError("audio fetching not implemented");
       case MediaType.text:
         return throw Exception("Can't fetch text message from storage.");
+      case MediaType.deleted:
+        return throw Exception("Can't fetch removed messages.");
     }
   }
 

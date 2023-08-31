@@ -115,6 +115,10 @@ class _ChatState extends State<Chat> {
             }
           }
 
+          for (int i = 0; i < newMessages.length; i++) {
+            _messages[i].update(newMessages[i]);
+          }
+
           if (!isPrivate) {
             _isTyping = data["${recipient.email}_typing"] as bool;
           }
@@ -201,9 +205,11 @@ class _ChatState extends State<Chat> {
 
   Widget _message(index, email) {
     return GestureDetector(
-      onDoubleTap: () => _messages[index].sender != email
+      onDoubleTap: () => _messages[index].sender != email &&
+              !isPrivate &&
+              _messages[index].type != MediaType.deleted
           ? _editDeleteMessage(context, index)
-          : '',
+          : null,
       child: Container(
         padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
         child: Align(
@@ -214,8 +220,12 @@ class _ChatState extends State<Chat> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: (_messages[index].sender == email
-                  ? Colors.grey.shade200
-                  : Colors.blue[200]),
+                  ? _messages[index].type == MediaType.deleted
+                      ? Colors.grey.shade200
+                      : Colors.grey.shade300
+                  : _messages[index].type == MediaType.deleted
+                      ? Colors.blue[100]
+                      : Colors.blue[200]),
             ),
             padding: const EdgeInsets.all(13),
             child: Column(
@@ -223,10 +233,16 @@ class _ChatState extends State<Chat> {
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
-                _messages[index].type == MediaType.text
+                _messages[index].type == MediaType.text ||
+                        _messages[index].type == MediaType.deleted
                     ? Text(
                         _messages[index].body,
-                        style: const TextStyle(fontSize: 15),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: _messages[index].type == MediaType.deleted
+                              ? Colors.grey.shade700
+                              : null,
+                        ),
                       )
                     : _messages[index].loading
                         ? Text(
@@ -260,13 +276,28 @@ class _ChatState extends State<Chat> {
           actions: [
             TextButton(
               onPressed: () {
-                setState(() => _messages[index].body = "Deleted");
+                MessageApi().editMessage(
+                  chatId: _chatId,
+                  index: index,
+                  newBody: "Removed...",
+                  newType: MediaType.deleted,
+                );
+                setState(() {
+                  _messages[index].body = "Removed...";
+                  _messages[index].type = MediaType.deleted;
+                });
                 Navigator.pop(context);
               },
               child: const Text('Delete'),
             ),
             TextButton(
               onPressed: () {
+                MessageApi().editMessage(
+                  chatId: _chatId,
+                  index: index,
+                  newBody: textFieldController.text,
+                  newType: MediaType.text,
+                );
                 setState(
                     () => _messages[index].body = textFieldController.text);
                 Navigator.pop(context);

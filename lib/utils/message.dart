@@ -12,7 +12,7 @@ class Message {
   dynamic body;
   late MediaType type;
   late Timestamp date;
-  final bool seen;
+  bool seen;
   final void Function(void Function() fn) setState;
   bool _loading = false;
 
@@ -32,6 +32,12 @@ class Message {
           ChatEncrypterService().stringToRSAKey(publicKey, isPrivate: false),
       privateKey: privateKey,
     );
+  }
+
+  void update(Map<String, dynamic> message) {
+    if (type == MediaType.text) body = message["body"];
+    type = MediaTypeUtils.from(message["type"]);
+    seen = message["seen"];
   }
 
   static Message fromMap(
@@ -66,14 +72,14 @@ class Message {
   }) {
     this.sender = Convert.decrypt(sender);
     this.type = MediaTypeUtils.from(type);
-    if (this.type != MediaType.text) {
+    if (this.type != MediaType.text && this.type != MediaType.deleted) {
       if (isPrivate) {
         throw Exception(
             "MediaType other than text was sent to a private chat message");
       }
       _loading = true;
       _fetchFile();
-    } else if (isPrivate) {
+    } else if (isPrivate && this.type != MediaType.deleted) {
       _decryptMessage(
         publicKey: publicKey as String,
         privateKey: privateKey as RSAPrivateKey,

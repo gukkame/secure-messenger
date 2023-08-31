@@ -72,7 +72,30 @@ class MessageApi extends Api {
         ])
       });
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> editMessage({
+    required String chatId,
+    required int index,
+    required String newBody,
+    required MediaType newType,
+  }) async {
+    try {
+      List<Map<String, dynamic>>? messages = await getMessages(chatId);
+      if (messages == null || messages.length < index) {
+        throw Exception("Unable to edit/delete a message at $index");
+      }
+      messages[index]["body"] = newBody;
+      messages[index]["type"] = newType.str;
+      await update(
+        collection: "chats",
+        path: chatId,
+        data: {"messages": messages},
+      );
+    } catch (e) {
+      debugPrint("MessageApi: $e");
     }
   }
 
@@ -87,7 +110,7 @@ class MessageApi extends Api {
         data: {"${email}_typing": isTyping},
       );
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("MessageApi: $e");
     }
   }
 
@@ -95,7 +118,7 @@ class MessageApi extends Api {
     try {
       await delete(collection: "chats", path: chatId);
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("MessageApi: $e");
     }
   }
 }
