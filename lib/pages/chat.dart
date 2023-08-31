@@ -57,6 +57,13 @@ class _ChatState extends State<Chat> {
   void _initMessages() async {
     await _getMessages();
     _setListener();
+    recipient.update = () {
+      if (isPrivate) {
+        MessageApi().removeChatRoom(_chatId);
+        setState(() => _isChatDead = true);
+      }
+    };
+    recipient.listen();
     setState(() {
       _loading = false;
     });
@@ -93,14 +100,11 @@ class _ChatState extends State<Chat> {
           recipient,
           user,
         ));
-        debugPrint(
-            "$i ${newMessages[i].seen} ${newMessages[i].sender} ${newMessages[i].sender != user.email} ${!newMessages[i].seen}");
         if (newMessages[i].sender != user.email && !(newMessages[i].seen)) {
           newMessages[i].seen = true;
           indexes.add(i);
         }
       }
-      debugPrint(indexes.toString());
       await MessageApi().setSeenAll(chatId: _chatId, indexes: indexes);
     }
 
@@ -155,6 +159,7 @@ class _ChatState extends State<Chat> {
   @override
   void dispose() {
     _chatRoomStream.cancel();
+    recipient.dispose();
     super.dispose();
   }
 

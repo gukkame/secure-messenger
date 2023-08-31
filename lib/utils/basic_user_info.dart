@@ -1,29 +1,52 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:secure_messenger/api/user_api.dart';
 import 'package:secure_messenger/utils/message.dart';
 
 class BasicUserInfo {
   final String _name;
   final String _email;
-  final String _key;
+  String key;
   final String? _imageUrl;
   final Message? _lastMessage;
+  late Function update;
+  late StreamSubscription<DocumentSnapshot<Object?>> _listener;
 
   String get name => _name;
   String get email => _email;
-  String get key => _key;
   String? get imageUrl => _imageUrl;
   Message? get lastMessage => _lastMessage;
 
-  const BasicUserInfo({
+  void dispose() {
+    _listener.cancel();
+  }
+
+  void listen() {
+    _listener =
+        UserApi().getStream(collection: "users", path: email).listen((event) {
+      if (event.exists) {
+        var data = event.data() as Map<String, dynamic>;
+        if (data["key"] != key) {
+          key = data["key"];
+          update();
+        }
+      }
+    });
+  }
+
+  BasicUserInfo({
     required String email,
     required String name,
-    required String key,
+    required this.key,
     String? image,
     Message? lastMessage,
   })  : _email = email,
         _name = name,
-        _key = key,
         _imageUrl = image,
-        _lastMessage = lastMessage;
+        _lastMessage = lastMessage {
+    update = () {};
+  }
 
   @override
   bool operator ==(Object other) {
@@ -41,7 +64,7 @@ class BasicUserInfo {
   int get hashCode =>
       _name.hashCode ^
       _email.hashCode ^
-      _key.hashCode ^
+      key.hashCode ^
       _lastMessage.hashCode ^
       imageUrl.hashCode;
 }

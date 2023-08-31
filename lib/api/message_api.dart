@@ -16,7 +16,6 @@ class MessageApi extends Api {
     try {
       List<Map<String, dynamic>> messages = [];
       var resp = await readPath(collection: "chats", path: docId);
-      debugPrint("getMessages: ${resp.data().toString()}");
       if (!resp.exists) return null;
       var data =
           (resp.data() as Map<String, dynamic>)["messages"] as List<dynamic>;
