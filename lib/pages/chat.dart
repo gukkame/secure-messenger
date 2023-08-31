@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/utils/convert.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 
 import '../../api/media_api.dart';
@@ -82,15 +83,25 @@ class _ChatState extends State<Chat> {
     }
 
     if (resp != null) {
-      for (var msg in resp) {
+      List<int> indexes = [];
+      for (int i = 0; i < resp.length; i++) {
+        var msg = resp[i];
         newMessages.add(Message.fromMap(
           msg,
           setState,
           isPrivate,
           recipient,
-          user.key,
+          user,
         ));
+        debugPrint(
+            "$i ${newMessages[i].seen} ${newMessages[i].sender} ${newMessages[i].sender != user.email} ${!newMessages[i].seen}");
+        if (newMessages[i].sender != user.email && !(newMessages[i].seen)) {
+          newMessages[i].seen = true;
+          indexes.add(i);
+        }
       }
+      debugPrint(indexes.toString());
+      await MessageApi().setSeenAll(chatId: _chatId, indexes: indexes);
     }
 
     _messages = newMessages;
@@ -110,17 +121,26 @@ class _ChatState extends State<Chat> {
                 setState,
                 isPrivate,
                 recipient,
-                user.key,
+                user,
               ));
             }
           }
 
-          for (int i = 0; i < newMessages.length; i++) {
-            _messages[i].update(newMessages[i]);
+          if (!isPrivate) {
+            for (int i = 0; i < newMessages.length; i++) {
+              _messages[i].update(newMessages[i]);
+            }
+          }
+
+          if (_messages.isNotEmpty &&
+              _messages.last.sender != user.email &&
+              !_messages.last.seen) {
+            MessageApi().setSeen(chatId: _chatId, index: _messages.length - 1);
           }
 
           if (!isPrivate) {
-            _isTyping = data["${recipient.email}_typing"] as bool;
+            _isTyping =
+                data["${Convert.encrypt(recipient.email)}_typing"] as bool;
           }
           setState(() {});
         }

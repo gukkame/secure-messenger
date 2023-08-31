@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pointycastle/impl.dart';
 import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
 import 'package:secure_messenger/utils/basic_user_info.dart';
+import 'package:secure_messenger/utils/user.dart';
 
 import '../../api/media_api.dart';
 import '../../utils/convert.dart';
@@ -45,7 +46,7 @@ class Message {
       void Function(void Function() fn) setState,
       bool isPrivate,
       BasicUserInfo recipient,
-      RSAPrivateKey? privateKey) {
+      User user) {
     return Message(
       sender: data["sender"],
       body: data["body"],
@@ -55,7 +56,7 @@ class Message {
       setState: setState,
       isPrivate: isPrivate,
       publicKey: recipient.key,
-      privateKey: privateKey,
+      privateKey: user.key,
     );
   }
 
