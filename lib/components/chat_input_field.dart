@@ -50,6 +50,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
   final ImagePicker picker = ImagePicker();
   File? image;
   Timer? _timer;
+  bool _isTyping = false;
   late String _filePath;
 
   final FlutterSoundRecord _audioRecorder = FlutterSoundRecord();
@@ -58,6 +59,24 @@ class _ChatInputFieldState extends State<ChatInputField> {
   @override
   void initState() {
     user = ProviderManager().getUser(context);
+    _textEditingController.addListener(() {
+      if (_textEditingController.text.isNotEmpty && !_isTyping) {
+        MessageApi().setTypingStatus(
+          chatId: widget.chatId,
+          email: user.email,
+          isTyping: true,
+        );
+        setState(() => _isTyping = true);
+      } else if (_textEditingController.text.isEmpty && _isTyping) {
+        MessageApi().setTypingStatus(
+          chatId: widget.chatId,
+          email: user.email,
+          isTyping: false,
+        );
+        setState(() => _isTyping = false);
+      }
+    });
+
     super.initState();
   }
 
