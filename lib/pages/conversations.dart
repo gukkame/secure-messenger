@@ -15,7 +15,7 @@ class ConversationPage extends StatefulWidget {
 }
 
 class _ConversationPageState extends State<ConversationPage> {
-  bool private = false;
+  bool private = true;
   List<BasicUserInfo>? chatUsers;
 
   @override

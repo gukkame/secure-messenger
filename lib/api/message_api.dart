@@ -9,7 +9,7 @@ import '../../utils/media_type.dart';
 class MessageApi extends Api {
   String createDocId(String email1, String email2, bool isPrivate) {
     return combineAndHashEmails(
-        email1, email1, isPrivate ? "private" : "public");
+        email1, email2, isPrivate ? "private" : "public");
   }
 
   Future<List<Map<String, dynamic>>?> getMessages(String docId) async {
