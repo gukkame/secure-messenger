@@ -19,7 +19,10 @@ class ContactsApi extends Api {
         if (foundUser["email"] != user.email &&
             (foundUser["name"] == input || foundUser["email"] == input)) {
           contacts.add(BasicUserInfo(
-              email: foundUser["email"], name: foundUser["name"]));
+            email: foundUser["email"],
+            name: foundUser["name"],
+            key: foundUser["key"],
+          ));
         }
       }
 
@@ -39,7 +42,8 @@ class ContactsApi extends Api {
       if (data == null) return [];
 
       for (var entry in data["friends"].entries) {
-        var userData = await UserApi().getUserInfo(email: Convert.decrypt(entry.key));
+        var userData =
+            await UserApi().getUserInfo(email: Convert.decrypt(entry.key));
         if (userData == null) {
           debugPrint("Couldn't find user info for ${entry.key}");
           continue;
@@ -49,6 +53,7 @@ class ContactsApi extends Api {
             email: Convert.decrypt(entry.key),
             name: entry.value,
             image: userData["image"],
+            key: userData["key"],
           ),
         );
       }

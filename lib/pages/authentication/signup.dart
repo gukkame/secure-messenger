@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:secure_messenger/api/user_api.dart';
+import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/media_api.dart';
@@ -343,7 +344,8 @@ class _SignUpState extends State<SignUp> {
     if (user == null) {
       throw Exception("Internal server error. Please contact support");
     }
-    widget.user.key = user["key"];
+    
+    widget.user.key = await ChatEncrypterService().getOrSetKey(email);
     widget.user.image = image as File;
 
     if (!mounted) throw Exception("App unmounted before user was set");

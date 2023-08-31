@@ -75,4 +75,27 @@ class MessageApi extends Api {
       debugPrint(e.toString());
     }
   }
+
+  Future<void> setTypingStatus(
+      {required String chatId,
+      required String email,
+      required bool isTyping}) async {
+    try {
+      update(
+        collection: "chats",
+        path: chatId,
+        data: {"${email}_typing": isTyping},
+      );
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> removeChatRoom(String chatId) async {
+    try {
+      await delete(collection: "chats", path: chatId);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
 }

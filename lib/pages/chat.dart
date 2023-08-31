@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 
@@ -24,10 +25,12 @@ class _ChatState extends State<Chat> {
   late BasicUserInfo recipient;
   late bool isPrivate;
   final MessageApi _msgApi = MessageApi();
+  late StreamSubscription<dynamic> _chatRoomStream;
   String? _recipientImageUrl;
   String _chatId = "";
   bool _isTyping = false;
   bool _loading = true;
+  bool _isChatDead = false;
   List<Message> _messages = [];
 
   @override
@@ -80,7 +83,13 @@ class _ChatState extends State<Chat> {
 
     if (resp != null) {
       for (var msg in resp) {
-        newMessages.add(Message.fromMap(msg, setState));
+        newMessages.add(Message.fromMap(
+          msg,
+          setState,
+          isPrivate,
+          recipient,
+          user.key,
+        ));
       }
     }
 
@@ -88,24 +97,41 @@ class _ChatState extends State<Chat> {
   }
 
   void _setListener() async {
-    _msgApi.getStream(collection: "chats", path: _chatId).listen((event) {
+    _chatRoomStream =
+        _msgApi.getStream(collection: "chats", path: _chatId).listen((event) {
       if (event.exists) {
         var data = event.data() as Map<String, dynamic>?;
         if (data != null) {
           var newMessages = data["messages"] as List<dynamic>;
-          var isRecipientTyping = data["${recipient.email}_typing"] as bool;
-
           if (newMessages.length > _messages.length) {
             for (int i = _messages.length; i < newMessages.length; i++) {
               _messages.add(Message.fromMap(
-                  newMessages[i] as Map<String, dynamic>, setState));
+                newMessages[i] as Map<String, dynamic>,
+                setState,
+                isPrivate,
+                recipient,
+                user.key,
+              ));
             }
           }
-          _isTyping = isRecipientTyping;
+
+          if (!isPrivate) {
+            _isTyping = data["${recipient.email}_typing"] as bool;
+          }
           setState(() {});
         }
+      } else {
+        setState(() {
+          _isChatDead = true;
+        });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _chatRoomStream.cancel();
+    super.dispose();
   }
 
   @override
@@ -128,7 +154,7 @@ class _ChatState extends State<Chat> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                        itemCount: _messages.length + 1,
+                        itemCount: _messages.length + 2,
                         shrinkWrap: true,
                         padding: const EdgeInsets.only(top: 10, bottom: 10),
                         itemBuilder: (context, index) {
@@ -139,6 +165,16 @@ class _ChatState extends State<Chat> {
                                 "This is the start of your conversation.",
                               ),
                             );
+                          } else if (index == _messages.length + 1) {
+                            return _isChatDead
+                                ? const Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Text(
+                                      "This chat is now over.\nPlease leave and rejoin to start a new conversation with this person.",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : const SizedBox.shrink();
                           } else {
                             return _message(index - 1, recipient.email);
                           }
@@ -151,8 +187,11 @@ class _ChatState extends State<Chat> {
             alignment: Alignment.bottomCenter,
             child: ChatInputField(
               loading: _loading,
-              privateChat: isPrivate,
+              isChatDead: _isChatDead,
+              isPrivate: isPrivate,
               chatId: _chatId,
+              recipient: recipient,
+              addMessage: addMessage,
             ),
           ),
         ],
@@ -270,6 +309,15 @@ class _ChatState extends State<Chat> {
         children: <Widget>[
           IconButton(
             onPressed: () {
+              if (isPrivate && !_isChatDead) {
+                MessageApi().removeChatRoom(_chatId);
+              } else {
+                MessageApi().setTypingStatus(
+                  chatId: _chatId,
+                  email: user.email,
+                  isTyping: false,
+                );
+              }
               Navigator.pop(context);
             },
             icon: const Icon(
@@ -312,4 +360,6 @@ class _ChatState extends State<Chat> {
       ),
     );
   }
+
+  void addMessage(Message message) => _messages.add(message);
 }

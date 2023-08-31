@@ -7,10 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound_record/flutter_sound_record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
 
 import 'package:secure_messenger/provider/provider_manager.dart';
 import 'package:secure_messenger/api/message_api.dart';
+import 'package:secure_messenger/utils/basic_user_info.dart';
 import 'package:secure_messenger/utils/media_type.dart';
+import 'package:secure_messenger/utils/message.dart';
 import '../api/media_api.dart';
 import '../utils/user.dart';
 import 'container.dart';
@@ -19,14 +22,20 @@ import 'package:image_picker/image_picker.dart';
 
 class ChatInputField extends StatefulWidget {
   final bool loading;
-  final bool privateChat;
+  final bool isChatDead;
+  final bool isPrivate;
   final String chatId;
+  final BasicUserInfo recipient;
+  final void Function(Message message) addMessage;
 
   const ChatInputField({
     super.key,
     required this.loading,
-    required this.privateChat,
+    required this.isChatDead,
+    required this.isPrivate,
     required this.chatId,
+    required this.recipient,
+    required this.addMessage,
   });
 
   @override
@@ -88,13 +97,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
             borderSize: 2,
             child: Row(
               children: <Widget>[
-                widget.privateChat
+                widget.isPrivate
                     ? const SizedBox(
                         width: 20,
                       )
                     : IconButton(
                         icon: const Icon(Icons.photo),
-                        onPressed: widget.loading
+                        onPressed: widget.loading || widget.isChatDead
                             ? null
                             : () {
                                 _pickImage();
@@ -102,6 +111,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       ),
                 Expanded(
                   child: TextField(
+                    enabled: !widget.loading && !widget.isChatDead,
                     controller: _textEditingController,
                     decoration: InputDecoration(
                       hintText: _isRecording
@@ -112,15 +122,15 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     textInputAction: TextInputAction.newline,
                   ),
                 ),
-                widget.privateChat
+                widget.isPrivate
                     ? const SizedBox.shrink()
                     : GestureDetector(
-                        onLongPressStart: widget.loading
+                        onLongPressStart: widget.loading || widget.isChatDead
                             ? null
                             : (details) {
                                 _start();
                               },
-                        onLongPressEnd: widget.loading
+                        onLongPressEnd: widget.loading || widget.isChatDead
                             ? null
                             : (details) {
                                 _stop();
@@ -129,13 +139,11 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: widget.loading
+                  onPressed: widget.loading || widget.isChatDead
                       ? null
-                      : widget.loading
-                          ? null
-                          : () {
-                              sendMessage();
-                            },
+                      : () {
+                          sendMessage();
+                        },
                 ),
               ],
             ),
@@ -147,19 +155,42 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
   void sendMessage() {
     if (_textEditingController.text != "") {
-      debugPrint("Message");
-      debugPrint(_textEditingController.text);
+      String text = _textEditingController.text;
+      widget.addMessage(Message(
+        sender: user.email,
+        body: text,
+        type: MediaType.text.str,
+        date: Timestamp.now(),
+        seen: false,
+        setState: (_) {},
+        isPrivate: false,
+      ));
+
+      if (widget.isPrivate) {
+        text = ChatEncrypterService().encrypt(
+          text: text,
+          publicKey: ChatEncrypterService().stringToRSAKey(
+            widget.recipient.key,
+            isPrivate: false,
+          ),
+          privateKey: user.key,
+        );
+      }
       _messageApi.sendMessage(
         widget.chatId,
         sender: user.email,
-        body: _textEditingController.text,
+        body: text,
         type: MediaType.text,
         date: Timestamp.now(),
       );
     }
     if (image != null) {
-      String link = _mediaApi.toPath(user.email,
-          file: image as File, type: MediaType.image);
+      String link = _mediaApi.toPath(
+        user.email,
+        file: image as File,
+        type: MediaType.image,
+      );
+
       _mediaApi.uploadFile(
         link,
         file: image as File,

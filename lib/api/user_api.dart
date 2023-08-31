@@ -61,4 +61,8 @@ class UserApi extends Api {
       {required String email, required String link}) async {
     update(collection: "users", path: email, data: {"image": link});
   }
+
+  Future<void> updateKey({required String email, required String key}) async {
+    update(collection: "users", path: email, data: {"key": key});
+  }
 }
