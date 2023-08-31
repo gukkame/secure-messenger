@@ -46,7 +46,7 @@ class _ChatState extends State<Chat> {
       throw Exception("chat: Couldn't load recipients user data");
     }
     _recipientImageUrl =
-        await MediaApi().getProfilePictureLink(recipientUserInfo["image"]);
+        await MediaApi().getFileDownloadLink(recipientUserInfo["image"]);
     setState(() {});
   }
 
@@ -130,7 +130,7 @@ class _ChatState extends State<Chat> {
                     : ListView.builder(
                         itemCount: _messages.length + 1,
                         shrinkWrap: true,
-                        padding: const EdgeInsets.only(top: 10, bottom: 10),
+                        padding: const EdgeInsets.only(top: 10, bottom: 70),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return const Align(
@@ -181,7 +181,7 @@ class _ChatState extends State<Chat> {
             padding: const EdgeInsets.all(13),
             child: Column(
               crossAxisAlignment: _messages[index].sender == email
-                  ? CrossAxisAlignment.start
+                  ? CrossAxisAlignment.stretch
                   : CrossAxisAlignment.end,
               children: [
                 _messages[index].type == MediaType.text
@@ -194,7 +194,13 @@ class _ChatState extends State<Chat> {
                             "Loading ${_messages[index].type.str}...",
                             style: const TextStyle(fontSize: 15),
                           )
-                        : _messages[index].body,
+                        : (_messages[index].type == MediaType.image)
+                            ? SizedBox(
+                                height: 300,
+                                child: _messages[index].body,
+                              )
+                            : SizedBox.shrink(),
+                // : _messages[index].body,
                 _messageInfo(index, email),
               ],
             ),
