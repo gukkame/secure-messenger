@@ -108,12 +108,12 @@ class _ChatInputFieldState extends State<ChatInputField> {
       onLongPressStart: widget.loading
           ? null
           : (details) {
-              _start();
+              _startRecording();
             },
       onLongPressEnd: widget.loading
           ? null
           : (details) {
-              _stop();
+              _stopRecording();
             },
       child: Icon(_isRecording ? Icons.stop : Icons.mic),
     );
@@ -181,83 +181,44 @@ class _ChatInputFieldState extends State<ChatInputField> {
         date: Timestamp.now(),
       );
     }
-    if (image != null) {
-      String link = _mediaApi.toPath(user.email,
-          file: image as File, type: MediaType.image);
-      _mediaApi.uploadFile(
-        link,
-        file: image as File,
-        type: MediaType.image,
-        onComplete: ({required String fileLink, required String msg}) {
-          debugPrint("Image uploaded! $msg");
-          _messageApi.sendMessage(
-            widget.chatId,
-            sender: user.email,
-            body: fileLink,
-            type: MediaType.image,
-            date: Timestamp.now(),
-          );
-        },
-        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
-        onError: (msg) {
-          throw Exception("IMAGE UPLOAD ERROR: $msg");
-        },
-      );
-    }
-    if (video != null) {
-      String link = _mediaApi.toPath(user.email,
-          file: video as File, type: MediaType.video);
-      _mediaApi.uploadFile(
-        link,
-        file: video as File,
-        type: MediaType.video,
-        onComplete: ({required String fileLink, required String msg}) {
-          debugPrint("Video uploaded! $msg");
-          _messageApi.sendMessage(
-            widget.chatId,
-            sender: user.email,
-            body: fileLink,
-            type: MediaType.video,
-            date: Timestamp.now(),
-          );
-        },
-        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
-        onError: (msg) {
-          throw Exception("VIDEO UPLOAD ERROR: $msg");
-        },
-      );
-    }
-    // if (_filePath != "") {
-    //   debugPrint("_filePath");
-    //   debugPrint(_filePath);
-    //   String link = _mediaApi.toPath(user.email,
-    //       file: _filePath as File, type: MediaType.audio);
-    //   _mediaApi.uploadFile(
-    //     link,
-    //     file: _filePath as File,
-    //     type: MediaType.audio,
-    //     onComplete: ({required String fileLink, required String msg}) {
-    //       debugPrint("Audio uploaded! $msg");
-    //       _messageApi.sendMessage(
-    //         widget.chatId,
-    //         sender: user.email,
-    //         body: fileLink,
-    //         type: MediaType.audio,
-    //         date: Timestamp.now(),
-    //       );
-    //     },
-    //     onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
-    //     onError: (msg) {
-    //       throw Exception("Audio UPLOAD ERROR: $msg");
-    //     },
-    //   );
-    // }
+    checkMedia(image);
+    checkMedia(video);
 
     setState(() {
       _textEditingController.text = "";
       image = null;
       video = null;
     });
+  }
+
+  void checkMedia(media) {
+    if (media != null) {
+      var type = MediaType.image;
+      if (media == 'video') {
+        type = MediaType.video;
+      }
+      String link =
+          _mediaApi.toPath(user.email, file: media as File, type: type);
+      _mediaApi.uploadFile(
+        link,
+        file: media as File,
+        type: type,
+        onComplete: ({required String fileLink, required String msg}) {
+          debugPrint("$media uploaded! $msg");
+          _messageApi.sendMessage(
+            widget.chatId,
+            sender: user.email,
+            body: fileLink,
+            type: type,
+            date: Timestamp.now(),
+          );
+        },
+        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
+        onError: (msg) {
+          throw Exception("$media UPLOAD ERROR: $msg");
+        },
+      );
+    }
   }
 
   void _pickImage() async {
@@ -278,7 +239,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
-  Future<void> _start() async {
+  Future<void> _startRecording() async {
     debugPrint("start");
     try {
       if (await _audioRecorder.hasPermission()) {
@@ -301,7 +262,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
-  Future<void> _stop() async {
+  Future<void> _stopRecording() async {
     try {
       debugPrint("stop recording");
       uploadAudio();
@@ -310,7 +271,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _isRecording = false;
       });
       await _audioRecorder.stop();
-      debugPrint(_audioRecorder.toString());
+      
     } catch (e) {
       if (kDebugMode) {
         debugPrint(e.toString());
