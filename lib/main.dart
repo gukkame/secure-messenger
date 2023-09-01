@@ -10,6 +10,7 @@ import 'pages/authentication/signup.dart';
 import 'pages/conversations.dart';
 import 'pages/contacts.dart';
 import 'pages/profile.dart';
+import 'pages/qr_scanner.dart';
 import 'pages/user_profile.dart';
 import 'provider/user_provider.dart';
 
@@ -42,6 +43,7 @@ class MainApp extends StatelessWidget {
           '/chat': (context) => const Chat(),
           '/profile': (context) => const ProfilePage(),
           '/user-profile': (context) => const UserProfilePage(),
+          '/scan-qr': (context) => QRScanPage(),
         },
       ),
     );
