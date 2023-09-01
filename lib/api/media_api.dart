@@ -82,19 +82,22 @@ class MediaApi {
       void Function(String msg, [int? progress])? onUpdate,
       void Function(String msg)? onComplete,
       void Function(String msg)? onError}) async {
-    Uint8List? data = await _storage.child(path).getData();
-    if (data == null) {
-      (onError ?? (_) {})("${type.str} has no data");
-      return null;
-    }
-    if (returnFile) return File.fromRawPath(data);
     switch (type) {
       case MediaType.image:
-        return Image.memory(data);
-      case MediaType.video:
-        return throw UnimplementedError("video fetching not implemented");
+        {
+          var bytes = await _getDataBytes(path, type, onError: onError);
+          if (bytes == null) return null;
+          if (returnFile) return File.fromRawPath(bytes);
+          return Image.memory(bytes);
+        }
       case MediaType.audio:
-        return throw UnimplementedError("audio fetching not implemented");
+        {
+          return getFileDownloadLink(path);
+        }
+      case MediaType.video:
+        {
+          return getFileDownloadLink(path);
+        }
       case MediaType.text:
         return throw Exception("Can't fetch text message from storage.");
       case MediaType.deleted:
@@ -102,7 +105,17 @@ class MediaApi {
     }
   }
 
-  Future<String> getProfilePictureLink(String path) {
+  Future<Uint8List?> _getDataBytes(String path, MediaType type,
+      {void Function(String msg)? onError}) async {
+    Uint8List? data = await _storage.child(path).getData(30485760);
+    if (data == null) {
+      (onError ?? (_) {})("${type.str} has no data");
+      return null;
+    }
+    return data;
+  }
+
+  Future<String> getFileDownloadLink(String path) {
     return _storage.child(path).getDownloadURL();
   }
 }

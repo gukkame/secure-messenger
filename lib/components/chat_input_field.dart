@@ -48,7 +48,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
   final MediaApi _mediaApi = MediaApi();
   final TextEditingController _textEditingController = TextEditingController();
   final ImagePicker picker = ImagePicker();
+  bool micPermission = false;
   File? image;
+  File? video;
   Timer? _timer;
   bool _isTyping = false;
   late String _filePath;
@@ -92,22 +94,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (image != null)
-          Positioned(
-            top: 100,
-            right: 16,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: FileImage(image!),
-                  fit: BoxFit.cover,
-                ),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-            ),
-          ),
+        if (image != null) _displayPickedImage,
         Padding(
           padding: const EdgeInsets.fromLTRB(27, 5, 27, 20),
           child: RoundedGradientContainer(
@@ -120,53 +107,91 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     ? const SizedBox(
                         width: 20,
                       )
-                    : IconButton(
-                        icon: const Icon(Icons.photo),
-                        onPressed: widget.loading || widget.isChatDead
-                            ? null
-                            : () {
-                                _pickImage();
-                              },
-                      ),
-                Expanded(
-                  child: TextField(
-                    enabled: !widget.loading && !widget.isChatDead,
-                    controller: _textEditingController,
-                    decoration: InputDecoration(
-                      hintText: _isRecording
-                          ? "Recording..."
-                          : 'Enter your message here...',
-                      border: InputBorder.none,
-                    ),
-                    textInputAction: TextInputAction.newline,
-                  ),
-                ),
-                widget.isPrivate
-                    ? const SizedBox.shrink()
-                    : GestureDetector(
-                        onLongPressStart: widget.loading || widget.isChatDead
-                            ? null
-                            : (details) {
-                                _start();
-                              },
-                        onLongPressEnd: widget.loading || widget.isChatDead
-                            ? null
-                            : (details) {
-                                _stop();
-                              },
-                        child: Icon(_isRecording ? Icons.stop : Icons.mic),
-                      ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: widget.loading || widget.isChatDead
-                      ? null
-                      : () {
-                          sendMessage();
-                        },
-                ),
+                    : _popupMenu,
+                _textInputField,
+                widget.isPrivate ? const SizedBox.shrink() : _recordButton,
+                _sendMessageButton,
               ],
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget get _sendMessageButton {
+    return IconButton(
+      icon: const Icon(Icons.send),
+      onPressed: widget.loading || widget.isChatDead
+          ? null
+          : () {
+              sendMessage();
+            },
+    );
+  }
+
+  Widget get _recordButton {
+    return GestureDetector(
+      onLongPressStart: widget.loading || widget.isChatDead
+          ? null
+          : (details) {
+              _startRecording();
+            },
+      onLongPressEnd: widget.loading || widget.isChatDead
+          ? null
+          : (details) {
+              _stopRecording();
+            },
+      child: Icon(_isRecording ? Icons.stop : Icons.mic),
+    );
+  }
+
+  Widget get _textInputField {
+    return Expanded(
+      child: TextField(
+        enabled: !widget.loading && !widget.isChatDead,
+        controller: _textEditingController,
+        decoration: InputDecoration(
+          hintText: _isRecording
+              ? "Recording..."
+              : video != null
+                  ? 'Video uploaded!'
+                  : 'Enter your message here...',
+          border: InputBorder.none,
+        ),
+        textInputAction: TextInputAction.newline,
+      ),
+    );
+  }
+
+  Widget get _displayPickedImage {
+    return Positioned(
+      top: 100,
+      right: 16,
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: FileImage(image!),
+            fit: BoxFit.cover,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+    );
+  }
+
+  Widget get _popupMenu {
+    return PopupMenuButton(
+      itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+        PopupMenuItem(
+          onTap: () => _pickImage(),
+          child: const Text('Photo'),
+        ),
+        PopupMenuItem(
+          onTap: () => _pickVideo(),
+          child: const Text('Video'),
         ),
       ],
     );
@@ -203,53 +228,65 @@ class _ChatInputFieldState extends State<ChatInputField> {
         date: Timestamp.now(),
       );
     }
-    if (image != null) {
-      String link = _mediaApi.toPath(
-        user.email,
-        file: image as File,
-        type: MediaType.image,
-      );
+    if (!widget.isPrivate) checkMedia(image, MediaType.image);
+    if (!widget.isPrivate) checkMedia(video, MediaType.video);
 
+    setState(() {
+      _textEditingController.text = "";
+      image = null;
+      video = null;
+    });
+  }
+
+  void checkMedia(File? media, MediaType type) {
+    if (media != null) {
+      String link = _mediaApi.toPath(user.email, file: media, type: type);
       _mediaApi.uploadFile(
         link,
-        file: image as File,
-        type: MediaType.image,
+        file: media,
+        type: type,
         onComplete: ({required String fileLink, required String msg}) {
-          debugPrint("Image uploaded! $msg");
+          debugPrint("$media uploaded! $msg");
           _messageApi.sendMessage(
             widget.chatId,
             sender: user.email,
             body: fileLink,
-            type: MediaType.image,
+            type: type,
             date: Timestamp.now(),
           );
         },
         onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
         onError: (msg) {
-          throw Exception("IMAGE UPLOAD ERROR: $msg");
+          throw Exception("$media UPLOAD ERROR: $msg");
         },
       );
     }
-
-    setState(() {
-      _textEditingController.text = "";
-      image = null;
-    });
   }
 
   void _pickImage() async {
     var newImage = await picker.pickImage(source: ImageSource.gallery);
+
     if (newImage != null) {
       debugPrint("New Image Picked: ${newImage.path}");
       setState(() => image = File(newImage.path));
     }
   }
 
-  Future<void> _start() async {
-    debugPrint("start");
+  void _pickVideo() async {
+    var newVideo = await picker.pickVideo(source: ImageSource.gallery);
+
+    if (newVideo != null) {
+      debugPrint("New Video Picked: ${newVideo.path}");
+      setState(() => video = File(newVideo.path));
+    }
+  }
+
+  Future<void> _startRecording() async {
+    debugPrint("Start recording");
+
     try {
-      if (await _audioRecorder.hasPermission()) {
-        debugPrint("permission granted");
+      if (micPermission) {
+        debugPrint("Microphone permission granted");
 
         setState(() => _isRecording = true);
 
@@ -257,9 +294,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _filePath = '${directory.path}/audio.mp3';
         await _audioRecorder.start(path: _filePath);
       } else {
-        debugPrint("no permission");
-        await _requestPermissions();
-        setState(() => _isRecording = false);
+        debugPrint("No permission to access microphone");
+        micPermission = await _audioRecorder.hasPermission();
+
+        setState(() {
+          _isRecording = false;
+          micPermission = micPermission;
+        });
       }
     } catch (e) {
       if (kDebugMode) {
@@ -268,18 +309,45 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
-  Future<void> _stop() async {
+  Future<void> _stopRecording() async {
     try {
-      debugPrint("stop recording");
+      debugPrint("Stop recording");
+      uploadAudio();
       setState(() {
+        _filePath = '';
         _isRecording = false;
       });
       await _audioRecorder.stop();
-      debugPrint(_audioRecorder.toString());
     } catch (e) {
       if (kDebugMode) {
         debugPrint(e.toString());
       }
+    }
+  }
+
+  void uploadAudio() {
+    if (_filePath != "") {
+      String link = _mediaApi.toPath(user.email,
+          file: File(_filePath), type: MediaType.audio);
+      _mediaApi.uploadFile(
+        link,
+        file: File(_filePath),
+        type: MediaType.audio,
+        onComplete: ({required String fileLink, required String msg}) {
+          debugPrint("Audio uploaded! $msg");
+          _messageApi.sendMessage(
+            widget.chatId,
+            sender: user.email,
+            body: fileLink,
+            type: MediaType.audio,
+            date: Timestamp.now(),
+          );
+        },
+        onUpdate: (msg, [progress]) => debugPrint(progress.toString()),
+        onError: (msg) {
+          throw Exception("Audio UPLOAD ERROR: $msg");
+        },
+      );
     }
   }
 

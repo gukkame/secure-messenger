@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:secure_messenger/utils/convert.dart';
+import 'package:secure_messenger/components/display_audio.dart';
 import 'package:secure_messenger/utils/media_type.dart';
-
+import 'package:video_player/video_player.dart';
 import '../../api/media_api.dart';
 import '../../api/user_api.dart';
 import '../../provider/provider_manager.dart';
@@ -12,6 +13,7 @@ import '../../utils/message.dart';
 import '../../utils/user.dart';
 import '../api/message_api.dart';
 import '../components/chat_input_field.dart';
+import '../components/display_video.dart';
 import '../utils/navigation.dart';
 
 class Chat extends StatefulWidget {
@@ -50,7 +52,7 @@ class _ChatState extends State<Chat> {
       throw Exception("chat: Couldn't load recipients user data");
     }
     _recipientImageUrl =
-        await MediaApi().getProfilePictureLink(recipientUserInfo["image"]);
+        await MediaApi().getFileDownloadLink(recipientUserInfo["image"]);
     setState(() {});
   }
 
@@ -185,7 +187,7 @@ class _ChatState extends State<Chat> {
                     : ListView.builder(
                         itemCount: _messages.length + 2,
                         shrinkWrap: true,
-                        padding: const EdgeInsets.only(top: 10, bottom: 10),
+                        padding: const EdgeInsets.only(top: 10, bottom: 70),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return const Align(
@@ -232,7 +234,7 @@ class _ChatState extends State<Chat> {
     return GestureDetector(
       onDoubleTap: () => _messages[index].sender != email &&
               !isPrivate &&
-              _messages[index].type != MediaType.deleted
+              _messages[index].type == MediaType.text
           ? _editDeleteMessage(context, index)
           : null,
       child: Container(
@@ -260,26 +262,43 @@ class _ChatState extends State<Chat> {
               children: [
                 _messages[index].type == MediaType.text ||
                         _messages[index].type == MediaType.deleted
-                    ? Text(
-                        _messages[index].body,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: _messages[index].type == MediaType.deleted
-                              ? Colors.grey.shade700
-                              : null,
-                        ),
-                      )
+                    ? _displayText(index)
                     : _messages[index].loading
                         ? Text(
                             "Loading ${_messages[index].type.str}...",
                             style: const TextStyle(fontSize: 15),
                           )
-                        : _messages[index].body,
+                        : (_messages[index].type == MediaType.image)
+                            ? _displayImage(index)
+                            : (_messages[index].type == MediaType.video)
+                                ? DisplayVideo(url: _messages[index].body)
+                                : (_messages[index].type == MediaType.audio)
+                                    ? DisplayAudio(url: _messages[index].body)
+                                    : const SizedBox.shrink(),
                 _messageInfo(index, email),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _displayImage(index) {
+    return SizedBox(
+      height: 300,
+      child: _messages[index].body,
+    );
+  }
+
+  Widget _displayText(index) {
+    return Text(
+      _messages[index].body,
+      style: TextStyle(
+        fontSize: 15,
+        color: _messages[index].type == MediaType.deleted
+            ? Colors.grey.shade700
+            : null,
       ),
     );
   }
