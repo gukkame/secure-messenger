@@ -1,7 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:secure_messenger/provider/provider_manager.dart';
-import '../utils/convert.dart';
-import '../utils/user.dart';
 import 'api.dart';
 
 class UserApi extends Api {
@@ -26,11 +23,6 @@ class UserApi extends Api {
         collection: "friends",
         path: email,
         data: {"friends": {}},
-      );
-      await write(
-        collection: "chats",
-        path: Convert.encrypt(email),
-        data: {},
       );
 
       return true;
@@ -62,5 +54,9 @@ class UserApi extends Api {
   Future<void> updateProfilePicture(
       {required String email, required String link}) async {
     update(collection: "users", path: email, data: {"image": link});
+  }
+
+  Future<void> updateKey({required String email, required String key}) async {
+    update(collection: "users", path: email, data: {"key": key});
   }
 }

@@ -84,8 +84,9 @@ class _QRScanPageState extends State<QRScanPage> {
       this.controller = controller;
     });
     controller.scannedDataStream.listen((scanData) async {
-      username = scanData.code!.split('-')[0];
-      email = scanData.code!.split('-')[1];
+      debugPrint(scanData.code);
+      username = scanData.code!.split(':')[0];
+      email = scanData.code!.split(':')[1];
       contacts = await ContactsApi().getContacts(username, _currentUser);
 
       setState(() {

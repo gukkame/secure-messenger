@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/utils/navigation.dart';
 
+import '../../utils/navigation.dart';
 import '../components/bottom_nav_bar.dart';
 import '../screens/contacts.dart';
 
@@ -19,7 +19,7 @@ class _ContactPageState extends State<ContactPage> {
         title: _appBarInfo,
         automaticallyImplyLeading: false,
       ),
-      body: Contacts(),
+      body: const Contacts(),
       bottomNavigationBar: const BottomNavBar(
         index: 0,
       ),

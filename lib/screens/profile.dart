@@ -46,7 +46,7 @@ class _ProfileState extends State<Profile> {
       height: 210.0,
       width: 210.0,
       child: QrImageView(
-        data: '$name-$email',
+        data: '$name:$email',
         version: QrVersions.auto,
         size: 210.0,
       ),

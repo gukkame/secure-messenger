@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/api/contacts_api.dart';
-import 'package:secure_messenger/provider/provider_manager.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'package:secure_messenger/utils/colors.dart';
+
+import '../../api/contacts_api.dart';
+import '../../provider/provider_manager.dart';
+import '../../utils/basic_user_info.dart';
+import '../../utils/colors.dart';
 
 import '../components/bottom_nav_bar.dart';
 import '../components/conversation_list.dart';
@@ -15,7 +16,7 @@ class ConversationPage extends StatefulWidget {
 }
 
 class _ConversationPageState extends State<ConversationPage> {
-  bool private = true;
+  bool private = false;
   List<BasicUserInfo>? chatUsers;
 
   @override

@@ -21,28 +21,29 @@ class MediaApi {
   void uploadFile(String link,
       {required File file,
       required MediaType type,
-      required void Function(String msg, [int? progress]) onUpdate,
-      required void Function({
+      void Function(String msg, [int? progress])? onUpdate,
+      void Function({
         required String msg,
         required String fileLink,
-      }) onComplete,
-      required void Function(String msg) onError}) {
+      })? onComplete,
+      void Function(String msg)? onError}) {
     var task = _storage.child(link).putFile(file).snapshotEvents;
     _handleUploadProgress(
       task,
       type.str,
       onUpdate: onUpdate,
       onComplete: (String msg) {
-        onComplete(msg: msg, fileLink: link);
+        (onComplete ?? ({required String msg, required String fileLink}) {})(
+            msg: msg, fileLink: link);
       },
       onError: onError,
     );
   }
 
   void _handleUploadProgress(Stream<TaskSnapshot> stream, String type,
-      {required void Function(String msg, [int? progress]) onUpdate,
-      required void Function(String msg) onComplete,
-      required void Function(String msg) onError}) {
+      {void Function(String msg, [int? progress])? onUpdate,
+      void Function(String msg)? onComplete,
+      void Function(String msg)? onError}) {
     try {
       stream.listen((taskSnapshot) {
         switch (taskSnapshot.state) {
@@ -50,27 +51,27 @@ class MediaApi {
             int progress = (100.0 *
                     (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes))
                 .round();
-            onUpdate("Uploading $type: $progress%", progress);
+            (onUpdate ?? (_, [__]) {})("Uploading $type: $progress%", progress);
             break;
           case TaskState.paused:
-            onUpdate("Uploading $type has been paused");
+            (onUpdate ?? (_) {})("Uploading $type has been paused");
             break;
           case TaskState.success:
-            onComplete(
+            (onComplete ?? (_) {})(
               "$type uploaded successfully.",
             );
             break;
           case TaskState.canceled:
-            onUpdate(
+            (onUpdate ?? (_) {})(
                 "Uploading $type has been canceled. Please contact support");
             break;
           case TaskState.error:
-            onError(taskSnapshot.metadata.toString());
+            (onError ?? (_) {})(taskSnapshot.metadata.toString());
             break;
         }
       });
     } catch (e) {
-      onError(e.toString());
+      (onError ?? (_) {})(e.toString());
     }
   }
 
@@ -78,28 +79,43 @@ class MediaApi {
       {required String path,
       required MediaType type,
       bool returnFile = false,
-      required void Function(String msg, [int? progress]) onUpdate,
-      required void Function(String msg) onComplete,
-      required void Function(String msg) onError}) async {
-    Uint8List? data = await _storage.child(path).getData();
-    if (data == null) {
-      onError("${type.str} has no data");
-      return null;
-    }
-    if (returnFile) return File.fromRawPath(data);
+      void Function(String msg, [int? progress])? onUpdate,
+      void Function(String msg)? onComplete,
+      void Function(String msg)? onError}) async {
     switch (type) {
       case MediaType.image:
-        return Image.memory(data);
-      case MediaType.video:
-        return throw UnimplementedError("video fetching not implemented");
+        {
+          var bytes = await _getDataBytes(path, type, onError: onError);
+          if (bytes == null) return null;
+          if (returnFile) return File.fromRawPath(bytes);
+          return Image.memory(bytes);
+        }
       case MediaType.audio:
-        return throw UnimplementedError("audio fetching not implemented");
+        {
+          return getFileDownloadLink(path);
+        }
+      case MediaType.video:
+        {
+          return getFileDownloadLink(path);
+        }
       case MediaType.text:
-        return throw Exception("Can't fetch text message from storeage.");
+        return throw Exception("Can't fetch text message from storage.");
+      case MediaType.deleted:
+        return throw Exception("Can't fetch removed messages.");
     }
   }
 
-  Future<String> getProfilePictureLink(String path) {
+  Future<Uint8List?> _getDataBytes(String path, MediaType type,
+      {void Function(String msg)? onError}) async {
+    Uint8List? data = await _storage.child(path).getData(30485760);
+    if (data == null) {
+      (onError ?? (_) {})("${type.str} has no data");
+      return null;
+    }
+    return data;
+  }
+
+  Future<String> getFileDownloadLink(String path) {
     return _storage.child(path).getDownloadURL();
   }
 }
