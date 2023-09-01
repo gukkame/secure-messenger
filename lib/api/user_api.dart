@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import '../utils/convert.dart';
 import 'api.dart';
 
 class UserApi extends Api {
@@ -24,11 +23,6 @@ class UserApi extends Api {
         collection: "friends",
         path: email,
         data: {"friends": {}},
-      );
-      await write(
-        collection: "chats",
-        path: Convert.encrypt(email),
-        data: {},
       );
 
       return true;

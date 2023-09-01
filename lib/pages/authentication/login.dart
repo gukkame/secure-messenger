@@ -40,20 +40,6 @@ class _LogInState extends State<LogIn> {
   /* Initialization */
   @override
   void initState() {
-    String email = "laura@gmail.com";
-    String password = "pass123";
-    // widget.user
-    //     .signInUser(
-    //   email: email,
-    //   password: password,
-    // )
-    //     .then(
-    //   (value) async {
-    //     debugPrint("resp: $value");
-    //     await _setUser(email);
-    //     _redirect();
-    //   },
-    // );
     _enableFingerPrintLogin();
     _getSharedPreferenceInstance();
     super.initState();
