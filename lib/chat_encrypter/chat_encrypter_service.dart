@@ -1,8 +1,8 @@
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:pointycastle/export.dart';
-import 'package:secure_messenger/api/user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../api/user_api.dart';
 import 'chat_encrypter.dart';
 import 'generate_rsa_key_pair.dart';
 import 'generate_secure_random.dart';

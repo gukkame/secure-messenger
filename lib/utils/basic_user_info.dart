@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:secure_messenger/api/user_api.dart';
-import 'package:secure_messenger/utils/message.dart';
+
+import '../../api/user_api.dart';
+import '../../utils/message.dart';
 
 class BasicUserInfo {
   final String _name;

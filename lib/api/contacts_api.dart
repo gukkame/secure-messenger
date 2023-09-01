@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:secure_messenger/api/user_api.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'api.dart';
 
+import '../../utils/basic_user_info.dart';
 import '../utils/convert.dart';
 import '../utils/user.dart';
+import 'user_api.dart';
+import 'api.dart';
 
 class ContactsApi extends Api {
   Future<List<BasicUserInfo>> getContacts(String input, User user) async {

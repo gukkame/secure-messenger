@@ -1,19 +1,18 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound_record/flutter_sound_record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
 
-import 'package:secure_messenger/provider/provider_manager.dart';
-import 'package:secure_messenger/api/message_api.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'package:secure_messenger/utils/media_type.dart';
-import 'package:secure_messenger/utils/message.dart';
+import '../../chat_encrypter/chat_encrypter_service.dart';
+import '../../provider/provider_manager.dart';
+import '../../api/message_api.dart';
+import '../../utils/basic_user_info.dart';
+import '../../utils/media_type.dart';
+import '../../utils/message.dart';
 import '../api/media_api.dart';
 import '../utils/user.dart';
 import 'container.dart';

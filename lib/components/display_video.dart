@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class DisplayVideo extends StatefulWidget {
-  DisplayVideo({super.key, required this.url});
+  const DisplayVideo({super.key, required this.url});
 
   final String url;
 

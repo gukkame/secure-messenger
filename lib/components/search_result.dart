@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:secure_messenger/components/user_field.dart';
 
+import '../../components/user_field.dart';
 import '../provider/provider_manager.dart';
 
 class SearchResult extends StatelessWidget {

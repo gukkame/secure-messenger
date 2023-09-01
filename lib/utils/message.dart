@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pointycastle/impl.dart';
-import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
-import 'package:secure_messenger/utils/user.dart';
 
+import '../../chat_encrypter/chat_encrypter_service.dart';
+import '../../utils/basic_user_info.dart';
+import '../../utils/user.dart';
 import '../../api/media_api.dart';
 import '../../utils/convert.dart';
 import '../../utils/media_type.dart';

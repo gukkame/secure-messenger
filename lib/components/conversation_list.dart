@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
 
+import '../../utils/basic_user_info.dart';
 import '../utils/navigation.dart';
 import 'container.dart';
 

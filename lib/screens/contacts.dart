@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/api/contacts_api.dart';
-import 'package:secure_messenger/components/search_result.dart';
-import 'package:secure_messenger/provider/provider_manager.dart';
-import 'package:secure_messenger/utils/basic_user_info.dart';
 
+import '../../api/contacts_api.dart';
+import '../../components/search_result.dart';
+import '../../provider/provider_manager.dart';
+import '../../utils/basic_user_info.dart';
 import '../components/container.dart';
 import '../utils/colors.dart';
 import '../utils/user.dart';

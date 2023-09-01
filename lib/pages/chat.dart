@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/utils/convert.dart';
-import 'package:secure_messenger/components/display_audio.dart';
-import 'package:secure_messenger/utils/media_type.dart';
-import 'package:video_player/video_player.dart';
+
 import '../../api/media_api.dart';
 import '../../api/user_api.dart';
 import '../../provider/provider_manager.dart';
+import '../../utils/media_type.dart';
+import '../../utils/convert.dart';
 import '../../utils/basic_user_info.dart';
 import '../../utils/colors.dart';
 import '../../utils/message.dart';
 import '../../utils/user.dart';
+import '../../components/display_audio.dart';
 import '../api/message_api.dart';
 import '../components/chat_input_field.dart';
 import '../components/display_video.dart';
