@@ -386,7 +386,7 @@ class _ChatState extends State<Chat> {
             onPressed: () {
               if (isPrivate && !_isChatDead) {
                 MessageApi().removeChatRoom(_chatId);
-              } else {
+              } else if (!isPrivate) {
                 MessageApi().setTypingStatus(
                   chatId: _chatId,
                   email: user.email,

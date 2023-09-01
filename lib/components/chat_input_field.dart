@@ -60,23 +60,25 @@ class _ChatInputFieldState extends State<ChatInputField> {
   @override
   void initState() {
     user = ProviderManager().getUser(context);
-    _textEditingController.addListener(() {
-      if (_textEditingController.text.isNotEmpty && !_isTyping) {
-        MessageApi().setTypingStatus(
-          chatId: widget.chatId,
-          email: user.email,
-          isTyping: true,
-        );
-        setState(() => _isTyping = true);
-      } else if (_textEditingController.text.isEmpty && _isTyping) {
-        MessageApi().setTypingStatus(
-          chatId: widget.chatId,
-          email: user.email,
-          isTyping: false,
-        );
-        setState(() => _isTyping = false);
-      }
-    });
+    if (!widget.isPrivate) {
+      _textEditingController.addListener(() {
+        if (_textEditingController.text.isNotEmpty && !_isTyping) {
+          MessageApi().setTypingStatus(
+            chatId: widget.chatId,
+            email: user.email,
+            isTyping: true,
+          );
+          setState(() => _isTyping = true);
+        } else if (_textEditingController.text.isEmpty && _isTyping) {
+          MessageApi().setTypingStatus(
+            chatId: widget.chatId,
+            email: user.email,
+            isTyping: false,
+          );
+          setState(() => _isTyping = false);
+        }
+      });
+    }
 
     super.initState();
   }
@@ -85,6 +87,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
   void dispose() {
     _timer?.cancel();
     _audioRecorder.dispose();
+    _textEditingController.removeListener(() {});
     super.dispose();
   }
 
