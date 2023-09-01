@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pointycastle/export.dart';
 import '../api/user_api.dart';
 
 class User {
@@ -8,7 +9,7 @@ class User {
   late String email;
   late String name;
   late File image;
-  late String key;
+  late RSAPrivateKey key;
 
   Future<String?> signInUser(
       {required String email, required String password}) async {

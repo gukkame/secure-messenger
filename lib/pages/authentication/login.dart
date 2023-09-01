@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:pointycastle/impl.dart';
 import 'package:secure_messenger/api/media_api.dart';
 import 'package:secure_messenger/api/user_api.dart';
+import 'package:secure_messenger/chat_encrypter/chat_encrypter_service.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../components/border_color.dart';
@@ -39,18 +41,18 @@ class _LogInState extends State<LogIn> {
   void initState() {
     String email = "laura@gmail.com";
     String password = "pass123";
-    widget.user
-        .signInUser(
-      email: email,
-      password: password,
-    )
-        .then(
-      (value) async {
-        debugPrint("resp: $value");
-        await _setUser(email);
-        _redirect();
-      },
-    );
+    // widget.user
+    //     .signInUser(
+    //   email: email,
+    //   password: password,
+    // )
+    //     .then(
+    //   (value) async {
+    //     debugPrint("resp: $value");
+    //     await _setUser(email);
+    //     _redirect();
+    //   },
+    // );
     _enableFingerPrintLogin();
     _getSharedPreferenceInstance();
     super.initState();
@@ -358,9 +360,11 @@ class _LogInState extends State<LogIn> {
       onError: (_) {},
     );
 
-    widget.user.key = user["key"];
-    
     widget.user.image = image;
+
+    RSAPrivateKey key =
+        await ChatEncrypterService().getOrSetKey(email, user["key"]);
+    widget.user.key = key;
 
     if (!mounted) throw Exception("App unmounted before user was set");
 

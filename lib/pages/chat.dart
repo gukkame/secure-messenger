@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:secure_messenger/utils/convert.dart';
 import 'package:secure_messenger/components/display_audio.dart';
 import 'package:secure_messenger/utils/media_type.dart';
 import 'package:video_player/video_player.dart';
@@ -26,10 +28,12 @@ class _ChatState extends State<Chat> {
   late BasicUserInfo recipient;
   late bool isPrivate;
   final MessageApi _msgApi = MessageApi();
+  late StreamSubscription<dynamic> _chatRoomStream;
   String? _recipientImageUrl;
   String _chatId = "";
   bool _isTyping = false;
   bool _loading = true;
+  bool _isChatDead = false;
   List<Message> _messages = [];
 
   @override
@@ -55,6 +59,13 @@ class _ChatState extends State<Chat> {
   void _initMessages() async {
     await _getMessages();
     _setListener();
+    recipient.update = () {
+      if (isPrivate) {
+        MessageApi().removeChatRoom(_chatId);
+        setState(() => _isChatDead = true);
+      }
+    };
+    recipient.listen();
     setState(() {
       _loading = false;
     });
@@ -81,33 +92,77 @@ class _ChatState extends State<Chat> {
     }
 
     if (resp != null) {
-      for (var msg in resp) {
-        newMessages.add(Message.fromMap(msg, setState));
+      List<int> indexes = [];
+      for (int i = 0; i < resp.length; i++) {
+        var msg = resp[i];
+        newMessages.add(Message.fromMap(
+          msg,
+          setState,
+          isPrivate,
+          recipient,
+          user,
+        ));
+        if (newMessages[i].sender != user.email && !(newMessages[i].seen)) {
+          newMessages[i].seen = true;
+          indexes.add(i);
+        }
       }
+      await MessageApi().setSeenAll(chatId: _chatId, indexes: indexes);
     }
 
     _messages = newMessages;
   }
 
   void _setListener() async {
-    _msgApi.getStream(collection: "chats", path: _chatId).listen((event) {
+    _chatRoomStream =
+        _msgApi.getStream(collection: "chats", path: _chatId).listen((event) {
       if (event.exists) {
         var data = event.data() as Map<String, dynamic>?;
         if (data != null) {
           var newMessages = data["messages"] as List<dynamic>;
-          var isRecipientTyping = data["${recipient.email}_typing"] as bool;
-
           if (newMessages.length > _messages.length) {
             for (int i = _messages.length; i < newMessages.length; i++) {
               _messages.add(Message.fromMap(
-                  newMessages[i] as Map<String, dynamic>, setState));
+                newMessages[i] as Map<String, dynamic>,
+                setState,
+                isPrivate,
+                recipient,
+                user,
+              ));
             }
           }
-          _isTyping = isRecipientTyping;
+
+          if (!isPrivate) {
+            for (int i = 0; i < newMessages.length; i++) {
+              _messages[i].update(newMessages[i]);
+            }
+          }
+
+          if (_messages.isNotEmpty &&
+              _messages.last.sender != user.email &&
+              !_messages.last.seen) {
+            MessageApi().setSeen(chatId: _chatId, index: _messages.length - 1);
+          }
+
+          if (!isPrivate) {
+            _isTyping =
+                data["${Convert.encrypt(recipient.email)}_typing"] as bool;
+          }
           setState(() {});
         }
+      } else {
+        setState(() {
+          _isChatDead = true;
+        });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _chatRoomStream.cancel();
+    recipient.dispose();
+    super.dispose();
   }
 
   @override
@@ -130,7 +185,7 @@ class _ChatState extends State<Chat> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                        itemCount: _messages.length + 1,
+                        itemCount: _messages.length + 2,
                         shrinkWrap: true,
                         padding: const EdgeInsets.only(top: 10, bottom: 70),
                         itemBuilder: (context, index) {
@@ -141,6 +196,16 @@ class _ChatState extends State<Chat> {
                                 "This is the start of your conversation.",
                               ),
                             );
+                          } else if (index == _messages.length + 1) {
+                            return _isChatDead
+                                ? const Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Text(
+                                      "This chat is now over.\nPlease leave and rejoin to start a new conversation with this person.",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : const SizedBox.shrink();
                           } else {
                             return _message(index - 1, recipient.email);
                           }
@@ -153,8 +218,11 @@ class _ChatState extends State<Chat> {
             alignment: Alignment.bottomCenter,
             child: ChatInputField(
               loading: _loading,
-              privateChat: isPrivate,
+              isChatDead: _isChatDead,
+              isPrivate: isPrivate,
               chatId: _chatId,
+              recipient: recipient,
+              addMessage: addMessage,
             ),
           ),
         ],
@@ -164,9 +232,11 @@ class _ChatState extends State<Chat> {
 
   Widget _message(index, email) {
     return GestureDetector(
-      onDoubleTap: () => _messages[index].sender != email
+      onDoubleTap: () => _messages[index].sender != email &&
+              !isPrivate &&
+              _messages[index].type == MediaType.text
           ? _editDeleteMessage(context, index)
-          : '',
+          : null,
       child: Container(
         padding: const EdgeInsets.only(left: 14, right: 14, top: 8, bottom: 8),
         child: Align(
@@ -177,16 +247,21 @@ class _ChatState extends State<Chat> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: (_messages[index].sender == email
-                  ? Colors.grey.shade200
-                  : Colors.blue[200]),
+                  ? _messages[index].type == MediaType.deleted
+                      ? Colors.grey.shade200
+                      : Colors.grey.shade300
+                  : _messages[index].type == MediaType.deleted
+                      ? Colors.blue[100]
+                      : Colors.blue[200]),
             ),
             padding: const EdgeInsets.all(13),
             child: Column(
               crossAxisAlignment: _messages[index].sender == email
-                  ? CrossAxisAlignment.stretch
+                  ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
-                _messages[index].type == MediaType.text
+                _messages[index].type == MediaType.text ||
+                        _messages[index].type == MediaType.deleted
                     ? _displayText(index)
                     : _messages[index].loading
                         ? Text(
@@ -219,7 +294,12 @@ class _ChatState extends State<Chat> {
   Widget _displayText(index) {
     return Text(
       _messages[index].body,
-      style: const TextStyle(fontSize: 15),
+      style: TextStyle(
+        fontSize: 15,
+        color: _messages[index].type == MediaType.deleted
+            ? Colors.grey.shade700
+            : null,
+      ),
     );
   }
 
@@ -240,13 +320,28 @@ class _ChatState extends State<Chat> {
           actions: [
             TextButton(
               onPressed: () {
-                setState(() => _messages[index].body = "Deleted");
+                MessageApi().editMessage(
+                  chatId: _chatId,
+                  index: index,
+                  newBody: "Removed...",
+                  newType: MediaType.deleted,
+                );
+                setState(() {
+                  _messages[index].body = "Removed...";
+                  _messages[index].type = MediaType.deleted;
+                });
                 Navigator.pop(context);
               },
               child: const Text('Delete'),
             ),
             TextButton(
               onPressed: () {
+                MessageApi().editMessage(
+                  chatId: _chatId,
+                  index: index,
+                  newBody: textFieldController.text,
+                  newType: MediaType.text,
+                );
                 setState(
                     () => _messages[index].body = textFieldController.text);
                 Navigator.pop(context);
@@ -289,6 +384,15 @@ class _ChatState extends State<Chat> {
         children: <Widget>[
           IconButton(
             onPressed: () {
+              if (isPrivate && !_isChatDead) {
+                MessageApi().removeChatRoom(_chatId);
+              } else {
+                MessageApi().setTypingStatus(
+                  chatId: _chatId,
+                  email: user.email,
+                  isTyping: false,
+                );
+              }
               Navigator.pop(context);
             },
             icon: const Icon(
@@ -331,4 +435,6 @@ class _ChatState extends State<Chat> {
       ),
     );
   }
+
+  void addMessage(Message message) => _messages.add(message);
 }

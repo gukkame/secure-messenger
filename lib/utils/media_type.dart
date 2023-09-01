@@ -3,6 +3,7 @@ enum MediaType {
   image,
   video,
   audio,
+  deleted,
 }
 
 extension MediaTypeExtension on MediaType {
@@ -16,6 +17,8 @@ extension MediaTypeExtension on MediaType {
         return "video";
       case MediaType.audio:
         return "audio";
+      case MediaType.deleted:
+        return "deleted";
     }
   }
 }
@@ -35,6 +38,11 @@ class MediaTypeUtils {
       case "video":
       case "videos":
         return MediaType.video;
+      case "delete":
+      case "deleted":
+      case "remove":
+      case "removed":
+        return MediaType.deleted;
       default:
         throw UnimplementedError("No media type assigned to $str");
     }

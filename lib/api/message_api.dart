@@ -16,7 +16,6 @@ class MessageApi extends Api {
     try {
       List<Map<String, dynamic>> messages = [];
       var resp = await readPath(collection: "chats", path: docId);
-      debugPrint("getMessages: ${resp.data().toString()}");
       if (!resp.exists) return null;
       var data =
           (resp.data() as Map<String, dynamic>)["messages"] as List<dynamic>;
@@ -44,8 +43,8 @@ class MessageApi extends Api {
     try {
       write(collection: "chats", path: docId, data: {
         "messages": [],
-        if (!isPrivate) "${email1}_typing": false,
-        if (!isPrivate) "${email2}_typing": false,
+        if (!isPrivate) "${Convert.encrypt(email1)}_typing": false,
+        if (!isPrivate) "${Convert.encrypt(email2)}_typing": false,
       });
     } catch (e) {
       debugPrint("MessageApi: $e");
@@ -72,7 +71,96 @@ class MessageApi extends Api {
         ])
       });
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> editMessage({
+    required String chatId,
+    required int index,
+    required String newBody,
+    required MediaType newType,
+  }) async {
+    try {
+      List<Map<String, dynamic>>? messages = await getMessages(chatId);
+      if (messages == null || messages.length < index) {
+        throw Exception("Unable to edit/delete a message at $index");
+      }
+      messages[index]["body"] = newBody;
+      messages[index]["type"] = newType.str;
+      await update(
+        collection: "chats",
+        path: chatId,
+        data: {"messages": messages},
+      );
+    } catch (e) {
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> setSeen({
+    required String chatId,
+    required int index,
+  }) async {
+    try {
+      List<Map<String, dynamic>>? messages = await getMessages(chatId);
+      if (messages == null || messages.length < index) {
+        throw Exception("Unable to edit/delete a message at $index");
+      }
+      messages[index]["seen"] = true;
+      await update(
+        collection: "chats",
+        path: chatId,
+        data: {"messages": messages},
+      );
+    } catch (e) {
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> setSeenAll({
+    required String chatId,
+    required List<int> indexes,
+  }) async {
+    try {
+      if (indexes.isEmpty) return;
+      List<Map<String, dynamic>>? messages = await getMessages(chatId);
+      if (messages == null || messages.length < indexes.last) {
+        throw Exception("Unable to edit/delete a message at ${indexes.last}");
+      }
+      for (var i in indexes) {
+        messages[i]["seen"] = true;
+      }
+      await update(
+        collection: "chats",
+        path: chatId,
+        data: {"messages": messages},
+      );
+    } catch (e) {
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> setTypingStatus(
+      {required String chatId,
+      required String email,
+      required bool isTyping}) async {
+    try {
+      update(
+        collection: "chats",
+        path: chatId,
+        data: {"${Convert.encrypt(email)}_typing": isTyping},
+      );
+    } catch (e) {
+      debugPrint("MessageApi: $e");
+    }
+  }
+
+  Future<void> removeChatRoom(String chatId) async {
+    try {
+      await delete(collection: "chats", path: chatId);
+    } catch (e) {
+      debugPrint("MessageApi: $e");
     }
   }
 }
