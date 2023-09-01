@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:secure_messenger/components/app_bar.dart';
 
+import '../../components/app_bar.dart';
 import '../components/bottom_nav_bar.dart';
 import '../screens/contacts.dart';
 

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../api/contacts_api.dart';
+import '../../components/search_result.dart';
+import '../../provider/provider_manager.dart';
+import '../../utils/basic_user_info.dart';
 import '../components/container.dart';
 import '../utils/colors.dart';
+import '../utils/user.dart';
 
 class Contacts extends StatefulWidget {
   const Contacts({super.key});
@@ -11,12 +16,19 @@ class Contacts extends StatefulWidget {
 }
 
 class _ContactsState extends State<Contacts> {
+  late User _currentUser;
   final TextEditingController _searchController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? user;
-  final Widget _infoTextWidget = const SizedBox.shrink();
-  final bool _searchLock = false;
-  final String _searchedEmail = "";
+  String _infoText = "Search for friends";
+  bool _searchLock = false;
+  List<BasicUserInfo> contacts = [];
+
+  @override
+  void initState() {
+    _currentUser = ProviderManager().getUser(context);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,34 +50,44 @@ class _ContactsState extends State<Contacts> {
             ),
           ),
           const SizedBox(height: 40),
-          _infoTextWidget,
-          const Text("searched user"),
-          // _userWidget,
-          const SizedBox(
-            height: 20,
-          ),
+          Text(_infoText),
+          const SizedBox(height: 20),
           const Text(
             "Contact list ",
             style: TextStyle(
-                fontSize: 26, fontWeight: FontWeight.w500, color: primeColor),
+              fontSize: 26,
+              fontWeight: FontWeight.w500,
+              color: primeColor,
+            ),
           ),
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
           _contactList,
         ],
       ),
     );
   }
 
-  void search() {
+  void _search() async {
     debugPrint("Search button pressed");
-    // navigate(context, "/search");
+    setState(() => _searchLock = true);
+    String input = _searchController.value.text;
+    contacts = await ContactsApi().getContacts(input, _currentUser);
+    if (contacts.isEmpty) {
+      setState(() {
+        _searchLock = false;
+        _infoText = "No contacts found";
+      });
+    } else {
+      setState(() {
+        _searchLock = false;
+        _infoText = "Contacts found";
+      });
+    }
   }
 
   Widget get _searchButton {
     return TextButton(
-        onPressed: search,
+        onPressed: _searchLock ? () {} : _search,
         style: TextButton.styleFrom(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -111,8 +133,24 @@ class _ContactsState extends State<Contacts> {
   }
 
   Widget get _contactList {
-    return const Column(
-      children: [Text("friend 1 "), Text("friend 2")],
+    return Column(
+      children: contacts
+          .map((BasicUserInfo user) => SearchResult(
+                email: user.email,
+                name: user.name,
+                resetState: () {
+                  contacts.removeWhere((element) => element == user);
+                  setState(() {
+                    _infoText = "Contact added!";
+                  });
+                },
+                setErrorState: (String msg) {
+                  setState(() {
+                    _infoText = msg;
+                  });
+                },
+              ))
+          .toList(),
     );
   }
 }

@@ -40,6 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void logOut() async {
     await ProviderManager().logOut(context);
+    if (!mounted) return;
     navigate(context, "/login");
   }
 }
